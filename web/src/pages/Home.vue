@@ -1,6 +1,13 @@
 <script setup lang="ts">
-const joining = ref(false);
+import { ref } from 'vue';
+
 const code = ref('');
+const joining = ref(false);
+
+function join() {
+  if (!code.value) return;
+  joining.value = true;
+}
 </script>
 
 <template>
@@ -31,7 +38,7 @@ const code = ref('');
           label="Join & start snapping"
           :loading="joining"
           :disabled="!code"
-          @click="joining = true"
+          @click="join"
         />
       </template>
     </UCard>

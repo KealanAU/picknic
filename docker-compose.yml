@@ -1,0 +1,18 @@
+# Local dev stack: API + web. Photos use in-memory storage in the scaffold;
+# point Stripe__SecretKey / Azure storage at real values via a .env file.
+services:
+  api:
+    build: ./api
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
+
+  web:
+    build: ./web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api

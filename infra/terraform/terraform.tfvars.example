@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars and fill in. Do not commit the real file.
+project           = "picknic"
+environment       = "dev"
+location          = "uksouth"
+api_image_tag     = "latest"
+stripe_secret_key = "" # sk_live_... or sk_test_...

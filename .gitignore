@@ -26,6 +26,17 @@ secrets.json
 *.publishsettings
 local.settings.json
 
+# ---- Terraform ----
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
+# ---- Docker ----
+.env
+
 # ---- OS / editor ----
 .DS_Store
 .idea/

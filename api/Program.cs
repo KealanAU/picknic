@@ -1,9 +1,12 @@
 using System.Collections.Concurrent;
 using Picknic.Api.Models;
+using Picknic.Api.Payments;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.Configure<StripeOptions>(
+    builder.Configuration.GetSection(StripeOptions.SectionName));
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -56,5 +59,8 @@ app.MapGet("/api/events/{code}/photos", (string code) =>
         : Results.Ok(new { revealed = true, photos = ev.Photos });
 })
 .WithName("GetPhotos");
+
+// Optional payments — see Payments/CheckoutEndpoints.cs.
+app.MapCheckoutEndpoints();
 
 app.Run();
