@@ -1,0 +1,16 @@
+# Force the GitHub language bar to show the .NET backend as the primary
+# language. The Vue PWA (web) and Lynx mobile app (app) are real work but
+# are marked vendored so C# surfaces as the repo's primary language.
+web/**      linguist-vendored
+app/**      linguist-vendored
+
+# Keep generated / lock / build output out of language stats entirely.
+**/dist/**          linguist-generated
+**/bin/**           linguist-generated
+**/obj/**           linguist-generated
+pnpm-lock.yaml      linguist-generated
+*.lock              linguist-generated
+
+# Normalize line endings.
+* text=auto eol=lf
+*.sln  text eol=crlf

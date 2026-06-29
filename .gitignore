@@ -1,0 +1,32 @@
+# ---- .NET ----
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+appsettings.*.local.json
+
+# ---- Node / Vue / Lynx ----
+node_modules/
+dist/
+.rspeedy/
+*.tsbuildinfo
+.vite/
+
+# ---- Env & secrets (never commit) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+secrets.json
+
+# ---- Azure ----
+.azure/
+*.publishsettings
+local.settings.json
+
+# ---- OS / editor ----
+.DS_Store
+.idea/
+*.log
