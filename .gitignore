@@ -5,6 +5,9 @@
 *.suo
 .vs/
 appsettings.*.local.json
+*.db
+*.db-shm
+*.db-wal
 
 # ---- Node / Vue / Lynx ----
 node_modules/

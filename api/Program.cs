@@ -1,66 +1,91 @@
-using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Picknic.Api.Auth;
+using Picknic.Api.Data;
+using Picknic.Api.Endpoints;
 using Picknic.Api.Models;
 using Picknic.Api.Payments;
+using Picknic.Api.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
+// ---- Options ----
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection(StripeOptions.SectionName));
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-});
+builder.Services.Configure<StorageOptions>(
+    builder.Configuration.GetSection(StorageOptions.SectionName));
+builder.Services.Configure<GuestTokenOptions>(
+    builder.Configuration.GetSection(GuestTokenOptions.SectionName));
+
+// ---- Persistence ----
+builder.Services.AddDbContext<PicknicDbContext>(o =>
+    o.UseSqlite(builder.Configuration.GetConnectionString("Default")
+        ?? "Data Source=picknic.db"));
+
+// ---- Host identity (ASP.NET Core Identity bearer tokens) ----
+builder.Services.AddIdentityApiEndpoints<AppUser>()
+    .AddEntityFrameworkStores<PicknicDbContext>();
+
+// ---- Guest capability tokens (separate JWT scheme) ----
+var guestOpts = builder.Configuration.GetSection(GuestTokenOptions.SectionName).Get<GuestTokenOptions>()
+    ?? new GuestTokenOptions();
+builder.Services.AddAuthentication()
+    .AddJwtBearer("Guest", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = guestOpts.Issuer,
+            ValidateAudience = true,
+            ValidAudience = guestOpts.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = guestOpts.SecurityKey(),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("Host", p => p
+        .AddAuthenticationSchemes(IdentityConstants.BearerScheme)
+        .RequireAuthenticatedUser())
+    .AddPolicy("Guest", p => p
+        .AddAuthenticationSchemes("Guest")
+        .RequireAuthenticatedUser()
+        .RequireClaim(GuestTokenService.EventClaim));
+
+builder.Services.AddScoped<GuestTokenService>();
+builder.Services.AddScoped<BlobSasService>();
+
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Dev convenience — create the schema. Use EF migrations for production.
+using (var scope = app.Services.CreateScope())
 {
-    app.MapOpenApi();
+    scope.ServiceProvider.GetRequiredService<PicknicDbContext>().Database.EnsureCreated();
 }
 
+if (app.Environment.IsDevelopment())
+    app.MapOpenApi();
+
 app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
 
-// In-memory store for the scaffold. Swap for a real DB + Azure Blob Storage.
-var events = new ConcurrentDictionary<string, Event>();
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok" })).WithName("Health");
 
-app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }))
-    .WithName("Health");
+// Host auth: /api/auth/register, /api/auth/login, ...
+app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
 
-// Create an event (a "roll" that develops at revealAt).
-app.MapPost("/api/events", (CreateEvent req) =>
-{
-    var ev = new Event(
-        Id: Guid.NewGuid().ToString("n"),
-        Code: req.Code.ToUpperInvariant(),
-        Name: req.Name,
-        RevealAt: req.RevealAt);
-    events[ev.Code] = ev;
-    return Results.Created($"/api/events/{ev.Code}", ev);
-})
-.WithName("CreateEvent");
-
-// Join / look up an event by its code.
-app.MapGet("/api/events/{code}", (string code) =>
-    events.TryGetValue(code.ToUpperInvariant(), out var ev)
-        ? Results.Ok(ev)
-        : Results.NotFound())
-.WithName("GetEvent");
-
-// Photos are only revealed once the roll has "developed".
-app.MapGet("/api/events/{code}/photos", (string code) =>
-{
-    if (!events.TryGetValue(code.ToUpperInvariant(), out var ev))
-        return Results.NotFound();
-
-    return DateTimeOffset.UtcNow < ev.RevealAt
-        ? Results.Ok(new { revealed = false, ev.RevealAt })
-        : Results.Ok(new { revealed = true, photos = ev.Photos });
-})
-.WithName("GetPhotos");
-
-// Optional payments — see Payments/CheckoutEndpoints.cs.
+app.MapEventEndpoints();
+app.MapUploadEndpoints();
 app.MapCheckoutEndpoints();
 
 app.Run();
