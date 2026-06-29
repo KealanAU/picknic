@@ -9,8 +9,12 @@ RUN pnpm install --frozen-lockfile || pnpm install
 COPY . .
 RUN pnpm build
 
-# ---- runtime (static, served by nginx) ----
-FROM nginx:alpine AS runtime
-COPY --from=build /src/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+# ---- runtime (Nuxt SSR Nitro node server) ----
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production \
+    NITRO_PORT=3000 \
+    NITRO_HOST=0.0.0.0
+COPY --from=build /src/.output ./.output
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]

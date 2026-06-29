@@ -1,5 +1,5 @@
-# Local dev stack: API + web. Photos use in-memory storage in the scaffold;
-# point Stripe__SecretKey / Azure storage at real values via a .env file.
+# Local dev stack: API + web (Nuxt SSR). Photos use in-memory storage in the
+# scaffold; point Stripe__SecretKey / Azure storage at real values via a .env.
 services:
   api:
     build: ./api
@@ -13,6 +13,8 @@ services:
   web:
     build: ./web
     ports:
-      - "5173:80"
+      - "3000:3000"
+    environment:
+      NUXT_API_BASE: http://api:8080
     depends_on:
       - api

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-
-const code = ref('');
 const joining = ref(false);
+const code = ref('');
 
-function join() {
-  if (!code.value) return;
-  joining.value = true;
-}
+// SSR-rendered tags for SEO / link previews.
+useSeoMeta({
+  title: 'Picknic — Shared event camera',
+  description: 'Snap photos at a wedding or party. One shared roll, revealed at the end.',
+  ogTitle: 'Picknic — Shared event camera',
+  ogDescription: 'One roll. Revealed at the end.',
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+});
 </script>
 
 <template>
@@ -38,7 +41,7 @@ function join() {
           label="Join & start snapping"
           :loading="joining"
           :disabled="!code"
-          @click="join"
+          @click="joining = true"
         />
       </template>
     </UCard>

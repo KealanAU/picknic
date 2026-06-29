@@ -13,7 +13,7 @@
 | Folder | What | Tech |
 | ------ | ---- | ---- |
 | [`api/`](./api) | REST API, events, photos, payments | **.NET 10 / ASP.NET Core** + Stripe |
-| [`web/`](./web) | Guest-facing PWA (QR join, capture, reveal) | Vue 3 + Vite + [`@nuxt/ui`](https://ui.nuxt.com) (PWA) |
+| [`web/`](./web) | Guest-facing PWA + SSR for SEO | Nuxt 4 + [`@nuxt/ui`](https://ui.nuxt.com) (PWA) |
 | [`app/`](./app) | Native mobile app | Lynx via [`vue-lynx`](https://www.npmjs.com/package/vue-lynx) + [`@vyui`](https://www.npmjs.com/package/@vyui/kit) |
 | [`infra/`](./infra/terraform) | Azure infra as code | Terraform (Container Apps, ACR, Blob Storage) |
 
@@ -44,7 +44,7 @@ pnpm dev   # scan with the Lynx Explorer app
 
 ### Everything via Docker
 ```bash
-docker compose up --build   # api on :5000, web on :5173
+docker compose up --build   # api on :5000, web (SSR) on :3000
 ```
 
 ## Payments (Stripe)
