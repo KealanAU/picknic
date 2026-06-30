@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Picknic.Api.Models;
 
 namespace Picknic.Api.Data;
@@ -15,6 +16,23 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // SQLite can't ORDER BY/compare DateTimeOffset; store as sortable Unix ms.
+        if (Database.IsSqlite())
+        {
+            var toMs = new ValueConverter<DateTimeOffset, long>(
+                v => v.ToUnixTimeMilliseconds(),
+                v => DateTimeOffset.FromUnixTimeMilliseconds(v));
+            var toMsNullable = new ValueConverter<DateTimeOffset?, long?>(
+                v => v == null ? null : v.Value.ToUnixTimeMilliseconds(),
+                v => v == null ? null : DateTimeOffset.FromUnixTimeMilliseconds(v.Value));
+
+            foreach (var prop in builder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+            {
+                if (prop.ClrType == typeof(DateTimeOffset)) prop.SetValueConverter(toMs);
+                else if (prop.ClrType == typeof(DateTimeOffset?)) prop.SetValueConverter(toMsNullable);
+            }
+        }
 
         builder.Entity<Event>(e =>
         {

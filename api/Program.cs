@@ -86,6 +86,7 @@ app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
 
 app.MapEventEndpoints();
 app.MapUploadEndpoints();
+app.MapGuestEndpoints();
 app.MapInviteEndpoints();
 app.MapCheckoutEndpoints();
 

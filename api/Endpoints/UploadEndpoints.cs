@@ -18,7 +18,7 @@ public static class UploadEndpoints
         group.MapPost("/uploads", async (
             Guid id, ClaimsPrincipal user, PicknicDbContext db, BlobSasService blobs) =>
         {
-            if (!GuestOwnsEvent(user, id)) return Results.Forbid();
+            if (await ActiveGuest(db, user, id) is null) return Results.Forbid();
             if (!blobs.Enabled) return Results.Problem("Storage is not configured.", statusCode: 501);
 
             var ev = await db.Events.FindAsync(id);
@@ -41,9 +41,8 @@ public static class UploadEndpoints
             Guid id, CompleteUploadRequest req, ClaimsPrincipal user,
             PicknicDbContext db, BlobSasService blobs) =>
         {
-            if (!GuestOwnsEvent(user, id)) return Results.Forbid();
-            var guestId = GuestTokenService.GuestId(user);
-            if (guestId is null) return Results.Forbid();
+            var guest = await ActiveGuest(db, user, id);
+            if (guest is null) return Results.Forbid();
             if (!req.BlobPath.StartsWith($"{id}/")) return Results.BadRequest("Blob path outside event.");
 
             var ev = await db.Events.FindAsync(id);
@@ -56,7 +55,7 @@ public static class UploadEndpoints
             {
                 EventId = id,
                 BlobPath = req.BlobPath,
-                UploadedByGuestId = guestId.Value,
+                UploadedByGuestId = guest.Id,
                 Caption = req.Caption,
                 SizeBytes = size.Value,
             };
@@ -105,6 +104,14 @@ public static class UploadEndpoints
         return app;
     }
 
-    private static bool GuestOwnsEvent(ClaimsPrincipal user, Guid eventId) =>
-        user.FindFirstValue(GuestTokenService.EventClaim) == eventId.ToString();
+    // The token must be scoped to this event AND the guest must still be active —
+    // this is where a host's kick takes effect on an otherwise-valid token.
+    private static async Task<Guest?> ActiveGuest(PicknicDbContext db, ClaimsPrincipal user, Guid eventId)
+    {
+        if (user.FindFirstValue(GuestTokenService.EventClaim) != eventId.ToString()) return null;
+        var guestId = GuestTokenService.GuestId(user);
+        if (guestId is null) return null;
+        return await db.Guests.FirstOrDefaultAsync(
+            g => g.Id == guestId && g.EventId == eventId && g.RemovedAt == null);
+    }
 }

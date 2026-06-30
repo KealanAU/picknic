@@ -65,6 +65,12 @@ public class BlobSasService(IOptions<StorageOptions> options)
         return props.Value.ContentLength;
     }
 
+    public async Task DeleteAsync(string blobPath)
+    {
+        var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
+        await blob.DeleteIfExistsAsync();
+    }
+
     private async Task<string> BuildSasAsync(
         BlobServiceClient service, string blobPath,
         BlobSasPermissions perms, DateTimeOffset expiresAt)
