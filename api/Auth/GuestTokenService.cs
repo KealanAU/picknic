@@ -49,16 +49,8 @@ public class GuestTokenService(IOptions<GuestTokenOptions> options)
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public static Guid? GuestId(System.Security.Claims.ClaimsPrincipal user) =>
+    public static Guid? GuestId(ClaimsPrincipal user) =>
         Guid.TryParse(user.FindFirst(GuestClaim)?.Value, out var id) ? id : null;
-
-    public static string Hash(string secret) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
-
-    public static bool VerifyHash(string secret, string hash) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(Hash(secret)),
-            Encoding.UTF8.GetBytes(hash));
 
     /// <summary>High-entropy secret carried by the QR code.</summary>
     public static string NewSecret() =>

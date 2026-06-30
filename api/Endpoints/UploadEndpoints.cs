@@ -77,6 +77,8 @@ public static class UploadEndpoints
                 return Results.Ok(new { revealed = false, ev.RevealAt });
 
             var photos = await db.Photos.Where(p => p.EventId == id).ToListAsync();
+            var names = await db.Guests.Where(g => g.EventId == id)
+                .ToDictionaryAsync(g => g.Id, g => g.DisplayName);
             var expiry = now.AddHours(1);
             var items = blobs.Enabled
                 ? await Task.WhenAll(photos.Select(async p => new
@@ -84,9 +86,17 @@ public static class UploadEndpoints
                     p.Id,
                     p.Caption,
                     p.UploadedByGuestId,
+                    uploadedBy = names.GetValueOrDefault(p.UploadedByGuestId),
                     url = (string?)await blobs.CreateReadSasAsync(p.BlobPath, expiry),
                 }))
-                : photos.Select(p => new { p.Id, p.Caption, p.UploadedByGuestId, url = (string?)null }).ToArray();
+                : photos.Select(p => new
+                {
+                    p.Id,
+                    p.Caption,
+                    p.UploadedByGuestId,
+                    uploadedBy = names.GetValueOrDefault(p.UploadedByGuestId),
+                    url = (string?)null,
+                }).ToArray();
 
             return Results.Ok(new { revealed = true, photos = items });
         })

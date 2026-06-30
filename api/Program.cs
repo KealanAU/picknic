@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Picknic.Api.Auth;
 using Picknic.Api.Data;
+using Picknic.Api.Email;
 using Picknic.Api.Endpoints;
 using Picknic.Api.Models;
 using Picknic.Api.Payments;
@@ -57,6 +58,9 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<GuestTokenService>();
 builder.Services.AddScoped<BlobSasService>();
+builder.Services.AddSingleton<JoinSecretProtector>();
+builder.Services.AddSingleton<EventLinks>();
+builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
 
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
@@ -82,6 +86,7 @@ app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
 
 app.MapEventEndpoints();
 app.MapUploadEndpoints();
+app.MapInviteEndpoints();
 app.MapCheckoutEndpoints();
 
 app.Run();

@@ -14,8 +14,8 @@ public class Event
 
     public required string Name { get; set; }
 
-    /// <summary>SHA-256 of the high-entropy join secret carried by the QR.</summary>
-    public required string JoinSecretHash { get; set; }
+    /// <summary>The QR join secret, encrypted at rest so the host can re-display the QR.</summary>
+    public required string JoinSecretEnc { get; set; }
 
     public DateTimeOffset UploadOpensAt { get; set; }
     public DateTimeOffset UploadClosesAt { get; set; }

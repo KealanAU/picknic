@@ -9,6 +9,8 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
 {
     public DbSet<Event> Events => Set<Event>();
     public DbSet<Photo> Photos => Set<Photo>();
+    public DbSet<Guest> Guests => Set<Guest>();
+    public DbSet<Invite> Invites => Set<Invite>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -23,6 +25,18 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
                 .WithOne()
                 .HasForeignKey(p => p.EventId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Guest>(g =>
+        {
+            g.Property(x => x.DisplayName).HasMaxLength(80);
+            g.HasIndex(x => x.EventId);
+        });
+
+        builder.Entity<Invite>(i =>
+        {
+            i.Property(x => x.Email).HasMaxLength(256);
+            i.HasIndex(x => new { x.EventId, x.Email }).IsUnique();
         });
     }
 }
