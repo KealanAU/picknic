@@ -86,9 +86,13 @@ public static class EventEndpoints
             if (!ev.UploadOpen(now))
                 return Results.Problem("Uploads are closed for this event.", statusCode: 403);
 
+            // Each guest gets a UUID for this session — stamped on their photos.
+            // The client persists it (with the token) to recognise its own roll.
+            var guestId = Guid.NewGuid();
             return Results.Ok(new
             {
-                token = tokens.Issue(ev.Id, ev.UploadClosesAt),
+                guestId,
+                token = tokens.Issue(ev.Id, guestId, ev.UploadClosesAt),
                 expiresAt = ev.UploadClosesAt,
                 eventId = ev.Id,
             });

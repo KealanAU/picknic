@@ -45,6 +45,8 @@ public static class UploadEndpoints
             PicknicDbContext db, BlobSasService blobs) =>
         {
             if (!GuestOwnsEvent(user, id)) return Results.Forbid();
+            var guestId = GuestTokenService.GuestId(user);
+            if (guestId is null) return Results.Forbid();
             if (!req.BlobPath.StartsWith($"{id}/")) return Results.BadRequest("Blob path outside event.");
 
             var ev = await db.Events.FindAsync(id);
@@ -57,6 +59,7 @@ public static class UploadEndpoints
             {
                 EventId = id,
                 BlobPath = req.BlobPath,
+                UploadedByGuestId = guestId.Value,
                 Caption = req.Caption,
                 SizeBytes = size.Value,
             };
@@ -84,9 +87,10 @@ public static class UploadEndpoints
                 {
                     p.Id,
                     p.Caption,
+                    p.UploadedByGuestId,
                     url = (string?)await blobs.CreateReadSasAsync(p.BlobPath, expiry),
                 }))
-                : photos.Select(p => new { p.Id, p.Caption, url = (string?)null }).ToArray();
+                : photos.Select(p => new { p.Id, p.Caption, p.UploadedByGuestId, url = (string?)null }).ToArray();
 
             return Results.Ok(new { revealed = true, photos = items });
         })

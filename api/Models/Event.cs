@@ -40,6 +40,9 @@ public class Photo
     /// <summary>Server-generated blob path: "{eventId}/{guid}.jpg".</summary>
     public required string BlobPath { get; set; }
 
+    /// <summary>UUID of the guest who uploaded it (from their capability token).</summary>
+    public Guid UploadedByGuestId { get; set; }
+
     public string? Caption { get; set; }
     public long SizeBytes { get; set; }
     public DateTimeOffset UploadedAt { get; set; } = DateTimeOffset.UtcNow;

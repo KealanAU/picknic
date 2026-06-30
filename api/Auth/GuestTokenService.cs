@@ -28,10 +28,11 @@ public class GuestTokenOptions
 public class GuestTokenService(IOptions<GuestTokenOptions> options)
 {
     public const string EventClaim = "event_id";
+    public const string GuestClaim = "guest_id";
 
     private readonly GuestTokenOptions _opts = options.Value;
 
-    public string Issue(Guid eventId, DateTimeOffset expiresAt)
+    public string Issue(Guid eventId, Guid guestId, DateTimeOffset expiresAt)
     {
         var creds = new SigningCredentials(
             _opts.SecurityKey(), SecurityAlgorithms.HmacSha256);
@@ -41,7 +42,8 @@ public class GuestTokenService(IOptions<GuestTokenOptions> options)
             audience: _opts.Audience,
             claims:
             [
-                new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString("n")),
+                new Claim(JwtRegisteredClaimNames.Sub, guestId.ToString()),
+                new Claim(GuestClaim, guestId.ToString()),
                 new Claim(ClaimTypes.Role, "guest"),
                 new Claim(EventClaim, eventId.ToString()),
             ],
@@ -50,6 +52,10 @@ public class GuestTokenService(IOptions<GuestTokenOptions> options)
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    /// <summary>Reads the guest UUID from a validated guest principal.</summary>
+    public static Guid? GuestId(System.Security.Claims.ClaimsPrincipal user) =>
+        Guid.TryParse(user.FindFirst(GuestClaim)?.Value, out var id) ? id : null;
 
     /// <summary>SHA-256 hash used to store / compare a join secret.</summary>
     public static string Hash(string secret) =>
