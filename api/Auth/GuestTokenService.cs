@@ -20,11 +20,7 @@ public class GuestTokenOptions
         new(Encoding.UTF8.GetBytes(SigningKey));
 }
 
-/// <summary>
-/// Issues short-lived capability tokens for party guests. A guest token is
-/// scoped to exactly one event and expires when the upload window closes — so
-/// the deadline is enforced by the token itself, not just app logic.
-/// </summary>
+/// <summary>Issues guest capability tokens scoped to one event.</summary>
 public class GuestTokenService(IOptions<GuestTokenOptions> options)
 {
     public const string EventClaim = "event_id";
@@ -53,11 +49,9 @@ public class GuestTokenService(IOptions<GuestTokenOptions> options)
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    /// <summary>Reads the guest UUID from a validated guest principal.</summary>
     public static Guid? GuestId(System.Security.Claims.ClaimsPrincipal user) =>
         Guid.TryParse(user.FindFirst(GuestClaim)?.Value, out var id) ? id : null;
 
-    /// <summary>SHA-256 hash used to store / compare a join secret.</summary>
     public static string Hash(string secret) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
 

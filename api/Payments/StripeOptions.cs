@@ -12,7 +12,6 @@ public class StripeOptions
     public string SecretKey { get; set; } = string.Empty;
     public string? WebhookSecret { get; set; }
 
-    /// <summary>Where Stripe redirects after a successful / cancelled checkout.</summary>
     public string SuccessUrl { get; set; } = "http://localhost:5173/checkout/success";
     public string CancelUrl { get; set; } = "http://localhost:5173/checkout/cancel";
 

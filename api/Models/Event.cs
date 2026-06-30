@@ -21,7 +21,6 @@ public class Event
     public DateTimeOffset UploadClosesAt { get; set; }
     public DateTimeOffset RevealAt { get; set; }
 
-    /// <summary>Host (AppUser) who owns the event.</summary>
     public required string HostId { get; set; }
 
     public List<Photo> Photos { get; set; } = [];
@@ -37,10 +36,9 @@ public class Photo
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid EventId { get; set; }
 
-    /// <summary>Server-generated blob path: "{eventId}/{guid}.jpg".</summary>
+    /// <summary>Server-generated path: "{eventId}/{guid}.jpg" — never the client filename.</summary>
     public required string BlobPath { get; set; }
 
-    /// <summary>UUID of the guest who uploaded it (from their capability token).</summary>
     public Guid UploadedByGuestId { get; set; }
 
     public string? Caption { get; set; }

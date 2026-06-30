@@ -13,7 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 
-// ---- Options ----
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection(StripeOptions.SectionName));
 builder.Services.Configure<StorageOptions>(
@@ -21,16 +20,14 @@ builder.Services.Configure<StorageOptions>(
 builder.Services.Configure<GuestTokenOptions>(
     builder.Configuration.GetSection(GuestTokenOptions.SectionName));
 
-// ---- Persistence ----
 builder.Services.AddDbContext<PicknicDbContext>(o =>
     o.UseSqlite(builder.Configuration.GetConnectionString("Default")
         ?? "Data Source=picknic.db"));
 
-// ---- Host identity (ASP.NET Core Identity bearer tokens) ----
 builder.Services.AddIdentityApiEndpoints<AppUser>()
     .AddEntityFrameworkStores<PicknicDbContext>();
 
-// ---- Guest capability tokens (separate JWT scheme) ----
+// Guests authenticate on a separate JWT scheme, not Identity.
 var guestOpts = builder.Configuration.GetSection(GuestTokenOptions.SectionName).Get<GuestTokenOptions>()
     ?? new GuestTokenOptions();
 builder.Services.AddAuthentication()
@@ -81,7 +78,6 @@ app.UseAuthorization();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" })).WithName("Health");
 
-// Host auth: /api/auth/register, /api/auth/login, ...
 app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
 
 app.MapEventEndpoints();

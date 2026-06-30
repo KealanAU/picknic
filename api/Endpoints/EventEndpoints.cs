@@ -20,8 +20,7 @@ public static class EventEndpoints
     {
         var group = app.MapGroup("/api/events");
 
-        // Host creates an event. Code + join secret are returned ONCE here —
-        // the secret is only stored hashed.
+        // The join secret is returned once here and only ever stored hashed.
         group.MapPost("/", async (CreateEventRequest req, ClaimsPrincipal user, PicknicDbContext db) =>
         {
             var hostId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -45,7 +44,7 @@ public static class EventEndpoints
             {
                 ev.Id,
                 ev.Code,
-                joinSecret = secret, // shown once — put it in the QR
+                joinSecret = secret, // goes in the QR
                 ev.UploadOpensAt,
                 ev.UploadClosesAt,
                 ev.RevealAt,
@@ -54,7 +53,6 @@ public static class EventEndpoints
         .RequireAuthorization("Host")
         .WithName("CreateEvent");
 
-        // Public lookup by code — no photos, just window info for the join screen.
         group.MapGet("/{code}", async (string code, PicknicDbContext db) =>
         {
             var ev = await db.Events.FirstOrDefaultAsync(e => e.Code == code.ToUpperInvariant());
@@ -72,7 +70,6 @@ public static class EventEndpoints
         })
         .WithName("GetEvent");
 
-        // Guest joins with the QR secret -> scoped token that dies at window close.
         group.MapPost("/{code}/join", async (
             string code, JoinRequest req, PicknicDbContext db, GuestTokenService tokens) =>
         {
@@ -86,8 +83,6 @@ public static class EventEndpoints
             if (!ev.UploadOpen(now))
                 return Results.Problem("Uploads are closed for this event.", statusCode: 403);
 
-            // Each guest gets a UUID for this session — stamped on their photos.
-            // The client persists it (with the token) to recognise its own roll.
             var guestId = Guid.NewGuid();
             return Results.Ok(new
             {

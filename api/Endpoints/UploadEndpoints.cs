@@ -15,8 +15,6 @@ public static class UploadEndpoints
     {
         var group = app.MapGroup("/api/events/{id:guid}");
 
-        // Guest asks for a one-shot upload URL. Re-checks the window server-side
-        // and binds the SAS expiry to the deadline.
         group.MapPost("/uploads", async (
             Guid id, ClaimsPrincipal user, PicknicDbContext db, BlobSasService blobs) =>
         {
@@ -38,8 +36,7 @@ public static class UploadEndpoints
         .RequireAuthorization("Guest")
         .WithName("CreateUpload");
 
-        // Guest confirms the blob landed; server validates size + ownership and
-        // records metadata. (Alternatively, react to a Blob Created event.)
+        // Could instead react to a Blob Created event rather than a client callback.
         group.MapPost("/uploads/complete", async (
             Guid id, CompleteUploadRequest req, ClaimsPrincipal user,
             PicknicDbContext db, BlobSasService blobs) =>
@@ -70,7 +67,6 @@ public static class UploadEndpoints
         .RequireAuthorization("Guest")
         .WithName("CompleteUpload");
 
-        // Reveal gallery — only after RevealAt, served as short read-SAS links.
         group.MapGet("/photos", async (Guid id, PicknicDbContext db, BlobSasService blobs) =>
         {
             var ev = await db.Events.FindAsync(id);
