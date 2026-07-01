@@ -1,14 +1,34 @@
 # Local dev stack: API + web (Nuxt SSR). Photos use in-memory storage in the
 # scaffold; point Stripe__SecretKey / Azure storage at real values via a .env.
 services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: picknic
+      POSTGRES_USER: picknic
+      POSTGRES_PASSWORD: picknic
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U picknic -d picknic"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build: ./api
     ports:
       - "5000:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Host=db;Database=picknic;Username=picknic;Password=picknic"
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
 
   web:
     build: ./web
@@ -18,3 +38,6 @@ services:
       NUXT_API_BASE: http://api:8080
     depends_on:
       - api
+
+volumes:
+  pgdata:

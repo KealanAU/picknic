@@ -2,4 +2,7 @@
   <Folder Name="/api/">
     <Project Path="api/Picknic.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Picknic.Api.Tests/Picknic.Api.Tests.csproj" />
+  </Folder>
 </Solution>

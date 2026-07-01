@@ -5,12 +5,18 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
 provider "azurerm" {
   features {}
 }
+
+data "azurerm_client_config" "current" {}
 
 locals {
   name = "${var.project}-${var.environment}"
@@ -19,6 +25,20 @@ locals {
     environment = var.environment
     managed_by  = "terraform"
   }
+}
+
+# Random suffix to keep globally-unique names (Key Vault, Postgres) collision-free.
+resource "random_string" "suffix" {
+  length  = 6
+  upper   = false
+  special = false
+  numeric = true
+}
+
+# Strong random secret used to sign guest JWTs.
+resource "random_password" "guest_signing_key" {
+  length  = 48
+  special = false
 }
 
 resource "azurerm_resource_group" "main" {
@@ -53,6 +73,81 @@ resource "azurerm_storage_container" "photos" {
   container_access_type = "private"
 }
 
+# Holds the ASP.NET Core Data Protection key ring.
+resource "azurerm_storage_container" "dataprotection_keys" {
+  name                  = "dataprotection-keys"
+  storage_account_id    = azurerm_storage_account.photos.id
+  container_access_type = "private"
+}
+
+# ---- Key Vault for protecting the Data Protection key ring ----
+resource "azurerm_key_vault" "main" {
+  name                       = substr(replace("kv${var.project}${var.environment}${random_string.suffix.result}", "-", ""), 0, 24)
+  resource_group_name        = azurerm_resource_group.main.name
+  location                   = azurerm_resource_group.main.location
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  rbac_authorization_enabled = true
+  tags                       = local.tags
+}
+
+# Let the Terraform deployer create/manage keys in the vault.
+resource "azurerm_role_assignment" "deployer_kv_crypto_officer" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Crypto Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+resource "azurerm_key_vault_key" "dataprotection" {
+  name         = "dataprotection-key"
+  key_vault_id = azurerm_key_vault.main.id
+  key_type     = "RSA"
+  key_size     = 2048
+  key_opts     = ["wrapKey", "unwrapKey"]
+
+  depends_on = [azurerm_role_assignment.deployer_kv_crypto_officer]
+}
+
+# ---- PostgreSQL flexible server for app data ----
+resource "azurerm_postgresql_flexible_server" "main" {
+  name                          = "psql-${local.name}-${random_string.suffix.result}"
+  resource_group_name           = azurerm_resource_group.main.name
+  location                      = azurerm_resource_group.main.location
+  version                       = "16"
+  administrator_login           = var.postgres_admin_username
+  administrator_password        = var.postgres_admin_password
+  sku_name                      = var.postgres_sku_name
+  storage_mb                    = var.postgres_storage_mb
+  public_network_access_enabled = true
+  zone                          = "1"
+  tags                          = local.tags
+}
+
+resource "azurerm_postgresql_flexible_server_database" "picknic" {
+  name      = "picknic"
+  server_id = azurerm_postgresql_flexible_server.main.id
+  collation = "en_US.utf8"
+  charset   = "UTF8"
+}
+
+# Allow other Azure services (e.g. the Container App) to reach the server.
+resource "azurerm_postgresql_flexible_server_firewall_rule" "azure" {
+  name             = "allow-azure-services"
+  server_id        = azurerm_postgresql_flexible_server.main.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
+}
+
+locals {
+  postgres_connection_string = join(";", [
+    "Host=${azurerm_postgresql_flexible_server.main.fqdn}",
+    "Database=${azurerm_postgresql_flexible_server_database.picknic.name}",
+    "Username=${var.postgres_admin_username}",
+    "Password=${var.postgres_admin_password}",
+    "SslMode=Require",
+  ])
+}
+
 # ---- Container App environment + API ----
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "log-${local.name}"
@@ -78,6 +173,10 @@ resource "azurerm_container_app" "api" {
   revision_mode                = "Single"
   tags                         = local.tags
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   registry {
     server               = azurerm_container_registry.acr.login_server
     username             = azurerm_container_registry.acr.admin_username
@@ -92,6 +191,16 @@ resource "azurerm_container_app" "api" {
   secret {
     name  = "stripe-secret-key"
     value = var.stripe_secret_key
+  }
+
+  secret {
+    name  = "db-connection-string"
+    value = local.postgres_connection_string
+  }
+
+  secret {
+    name  = "guest-signing-key"
+    value = random_password.guest_signing_key.result
   }
 
   ingress {
@@ -122,9 +231,46 @@ resource "azurerm_container_app" "api" {
         secret_name = "stripe-secret-key"
       }
       env {
-        name  = "Storage__ConnectionString"
-        value = azurerm_storage_account.photos.primary_connection_string
+        name        = "ConnectionStrings__Default"
+        secret_name = "db-connection-string"
+      }
+      env {
+        name  = "Storage__AccountUrl"
+        value = azurerm_storage_account.photos.primary_blob_endpoint
+      }
+      env {
+        name        = "Auth__Guest__SigningKey"
+        secret_name = "guest-signing-key"
+      }
+      env {
+        name  = "Web__BaseUrl"
+        value = var.web_origin
+      }
+      env {
+        name  = "Cors__AllowedOrigins"
+        value = var.web_origin
+      }
+      env {
+        name  = "DataProtection__BlobUri"
+        value = "${azurerm_storage_account.photos.primary_blob_endpoint}${azurerm_storage_container.dataprotection_keys.name}/keys.xml"
+      }
+      env {
+        name  = "DataProtection__KeyVaultKeyId"
+        value = azurerm_key_vault_key.dataprotection.versionless_id
       }
     }
   }
+}
+
+# ---- Identity-based access for the container app ----
+resource "azurerm_role_assignment" "app_storage_blob" {
+  scope                = azurerm_storage_account.photos.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_container_app.api.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "app_kv_crypto_user" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Crypto User"
+  principal_id         = azurerm_container_app.api.identity[0].principal_id
 }

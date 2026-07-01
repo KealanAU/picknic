@@ -12,3 +12,13 @@ output "photos_storage_account" {
   value       = azurerm_storage_account.photos.name
   description = "Blob storage account holding guest photos."
 }
+
+output "postgres_fqdn" {
+  value       = azurerm_postgresql_flexible_server.main.fqdn
+  description = "Hostname of the PostgreSQL flexible server."
+}
+
+output "key_vault_uri" {
+  value       = azurerm_key_vault.main.vault_uri
+  description = "Base URI of the Key Vault protecting the Data Protection key ring."
+}

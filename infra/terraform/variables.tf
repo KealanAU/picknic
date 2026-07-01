@@ -28,3 +28,33 @@ variable "stripe_secret_key" {
   sensitive   = true
   description = "Stripe secret key. Leave empty to run without payments."
 }
+
+variable "postgres_admin_username" {
+  type        = string
+  default     = "picknicadmin"
+  description = "Administrator login for the PostgreSQL flexible server."
+}
+
+variable "postgres_admin_password" {
+  type        = string
+  sensitive   = true
+  description = "Administrator password for the PostgreSQL flexible server."
+}
+
+variable "postgres_sku_name" {
+  type        = string
+  default     = "B_Standard_B1ms"
+  description = "SKU for the PostgreSQL flexible server (e.g. B_Standard_B1ms, GP_Standard_D2s_v3)."
+}
+
+variable "postgres_storage_mb" {
+  type        = number
+  default     = 32768
+  description = "Storage in MB for the PostgreSQL flexible server."
+}
+
+variable "web_origin" {
+  type        = string
+  default     = "https://localhost:3000"
+  description = "Public web app origin (used for Web__BaseUrl and CORS allowed origins)."
+}

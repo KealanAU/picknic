@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
@@ -35,6 +36,7 @@ public static class CheckoutEndpoints
                 SuccessUrl = stripe.SuccessUrl,
                 CancelUrl = stripe.CancelUrl,
                 ClientReferenceId = req.EventCode,
+                Metadata = new() { ["plan"] = req.Plan, ["eventCode"] = req.EventCode },
                 LineItems =
                 [
                     new SessionLineItemOptions
@@ -55,7 +57,54 @@ public static class CheckoutEndpoints
 
             return Results.Ok(new { id = session.Id, url = session.Url });
         })
+        .RequireRateLimiting("checkout")
         .WithName("CreateCheckoutSession");
+
+        app.MapPost("/api/checkout/webhook", async (HttpRequest request, IOptions<StripeOptions> opts, Data.PicknicDbContext db) =>
+        {
+            var stripe = opts.Value;
+            if (string.IsNullOrEmpty(stripe.WebhookSecret))
+                return Results.Problem("Webhook is not configured.", statusCode: 501);
+
+            using var reader = new StreamReader(request.Body);
+            var json = await reader.ReadToEndAsync();
+
+            Stripe.Event stripeEvent;
+            try
+            {
+                stripeEvent = EventUtility.ConstructEvent(json, request.Headers["Stripe-Signature"], stripe.WebhookSecret);
+            }
+            catch (StripeException)
+            {
+                return Results.BadRequest();
+            }
+
+            if (stripeEvent.Type == "checkout.session.completed")
+            {
+                var session = stripeEvent.Data.Object as Stripe.Checkout.Session;
+                if (session is not null && session.PaymentStatus == "paid")
+                {
+                    var plan = session.Metadata?.GetValueOrDefault("plan");
+                    var eventCode = session.ClientReferenceId
+                        ?? session.Metadata?.GetValueOrDefault("eventCode");
+
+                    if (!string.IsNullOrEmpty(plan) && !string.IsNullOrEmpty(eventCode))
+                    {
+                        var code = eventCode.ToUpperInvariant();
+                        var ev = await db.Events.FirstOrDefaultAsync(e => e.Code == code);
+                        if (ev is not null)
+                        {
+                            ev.Tier = plan;
+                            ev.PaidAt = DateTimeOffset.UtcNow;
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
+
+            return Results.Ok();
+        })
+        .WithName("StripeWebhook");
 
         return app;
     }

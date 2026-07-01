@@ -5,11 +5,18 @@ using Microsoft.EntityFrameworkCore;
 using Picknic.Api.Auth;
 using Picknic.Api.Data;
 using Picknic.Api.Models;
+using Picknic.Api.Storage;
 using QRCoder;
 
 namespace Picknic.Api.Endpoints;
 
 public record CreateEventRequest(
+    string Name,
+    DateTimeOffset UploadOpensAt,
+    DateTimeOffset UploadClosesAt,
+    DateTimeOffset RevealAt);
+
+public record UpdateEventRequest(
     string Name,
     DateTimeOffset UploadOpensAt,
     DateTimeOffset UploadClosesAt,
@@ -142,9 +149,114 @@ public static class EventEndpoints
                 eventId = ev.Id,
             });
         })
+        .RequireRateLimiting("join")
         .WithName("JoinEvent");
 
+        // Host lists their own events with live upload/reveal state and counts.
+        group.MapGet("/", async (ClaimsPrincipal user, PicknicDbContext db) =>
+        {
+            var hostId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (hostId is null) return Results.Unauthorized();
+
+            var now = DateTimeOffset.UtcNow;
+            var events = await db.Events
+                .Where(e => e.HostId == hostId)
+                .OrderByDescending(e => e.UploadOpensAt)
+                .ToListAsync();
+
+            var result = new List<object>(events.Count);
+            foreach (var ev in events)
+            {
+                result.Add(new
+                {
+                    ev.Id,
+                    ev.Code,
+                    ev.Name,
+                    ev.Tier,
+                    ev.UploadOpensAt,
+                    ev.UploadClosesAt,
+                    ev.RevealAt,
+                    uploadOpen = ev.UploadOpen(now),
+                    revealed = ev.Revealed(now),
+                    guestCount = await db.Guests.CountAsync(g => g.EventId == ev.Id && g.RemovedAt == null),
+                    photoCount = await db.Photos.CountAsync(p => p.EventId == ev.Id),
+                });
+            }
+
+            return Results.Ok(result);
+        })
+        .RequireAuthorization("Host")
+        .WithName("ListEvents");
+
+        // Host edits the name and schedule of their event.
+        group.MapPut("/{id:guid}", async (
+            Guid id, UpdateEventRequest req, ClaimsPrincipal user, PicknicDbContext db) =>
+        {
+            var (ev, error) = await LoadOwnedEvent(id, user, db);
+            if (error is not null) return error;
+
+            ev!.Name = req.Name;
+            ev.UploadOpensAt = req.UploadOpensAt;
+            ev.UploadClosesAt = req.UploadClosesAt;
+            ev.RevealAt = req.RevealAt;
+            await db.SaveChangesAsync();
+
+            var now = DateTimeOffset.UtcNow;
+            return Results.Ok(new
+            {
+                ev.Id,
+                ev.Code,
+                ev.Name,
+                ev.Tier,
+                ev.UploadOpensAt,
+                ev.UploadClosesAt,
+                ev.RevealAt,
+                uploadOpen = ev.UploadOpen(now),
+                revealed = ev.Revealed(now),
+            });
+        })
+        .RequireAuthorization("Host")
+        .WithName("UpdateEvent");
+
+        // Host deletes their event, its photos (and blobs), guests and invites.
+        group.MapDelete("/{id:guid}", async (
+            Guid id, ClaimsPrincipal user, PicknicDbContext db, BlobSasService blobs) =>
+        {
+            var (ev, error) = await LoadOwnedEvent(id, user, db);
+            if (error is not null) return error;
+
+            var photos = await db.Photos.Where(p => p.EventId == id).ToListAsync();
+            if (blobs.Enabled)
+            {
+                foreach (var p in photos)
+                    await blobs.DeleteAsync(p.BlobPath);
+            }
+
+            var guests = await db.Guests.Where(g => g.EventId == id).ToListAsync();
+            var invites = await db.Invites.Where(i => i.EventId == id).ToListAsync();
+
+            db.Photos.RemoveRange(photos);
+            db.Guests.RemoveRange(guests);
+            db.Invites.RemoveRange(invites);
+            db.Events.Remove(ev!);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new { deleted = id, photosDeleted = photos.Count });
+        })
+        .RequireAuthorization("Host")
+        .WithName("DeleteEvent");
+
         return app;
+    }
+
+    private static async Task<(Event? Event, IResult? Error)> LoadOwnedEvent(
+        Guid id, ClaimsPrincipal user, PicknicDbContext db)
+    {
+        var hostId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var ev = await db.Events.FindAsync(id);
+        if (ev is null) return (null, Results.NotFound());
+        if (ev.HostId != hostId) return (null, Results.Forbid());
+        return (ev, null);
     }
 
     private static bool SecretMatches(string provided, string actual) =>

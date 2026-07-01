@@ -23,10 +23,16 @@ Payments are **optional** — set `Stripe__SecretKey` to enable event upgrades.
 ## Getting started
 
 ### API (.NET)
+Needs a Postgres instance. Spin one up with Docker, then run the API:
 ```bash
+docker run -d --name picknic-db -p 5432:5432 \
+  -e POSTGRES_DB=picknic -e POSTGRES_USER=picknic -e POSTGRES_PASSWORD=picknic \
+  postgres:17
+
 cd api
 dotnet run
 ```
+The connection string lives in `appsettings.Development.json` (`ConnectionStrings:Default`); override it with `ConnectionStrings__Default` in production.
 
 ### Web (Vue PWA)
 ```bash
@@ -66,8 +72,10 @@ terraform init
 terraform apply
 ```
 
-Provisions a resource group, Container Registry, Blob Storage, Log Analytics,
-and a Container App running the API.
+Provisions a resource group, Container Registry, Blob Storage, a PostgreSQL
+flexible server, Log Analytics, and a Container App running the API. Set
+`postgres_admin_password` in `terraform.tfvars`; the connection string is
+injected into the Container App as `ConnectionStrings__Default`.
 
 ## License
 

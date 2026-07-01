@@ -17,21 +17,17 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
     {
         base.OnModelCreating(builder);
 
-        // SQLite can't ORDER BY/compare DateTimeOffset; store as sortable Unix ms.
-        if (Database.IsSqlite())
-        {
-            var toMs = new ValueConverter<DateTimeOffset, long>(
-                v => v.ToUnixTimeMilliseconds(),
-                v => DateTimeOffset.FromUnixTimeMilliseconds(v));
-            var toMsNullable = new ValueConverter<DateTimeOffset?, long?>(
-                v => v == null ? null : v.Value.ToUnixTimeMilliseconds(),
-                v => v == null ? null : DateTimeOffset.FromUnixTimeMilliseconds(v.Value));
+        // Postgres 'timestamptz' only accepts UTC (zero-offset) DateTimeOffsets;
+        // normalise any client-supplied offset to UTC on write.
+        var toUtc = new ValueConverter<DateTimeOffset, DateTimeOffset>(
+            v => v.ToUniversalTime(), v => v);
+        var toUtcNullable = new ValueConverter<DateTimeOffset?, DateTimeOffset?>(
+            v => v == null ? null : v.Value.ToUniversalTime(), v => v);
 
-            foreach (var prop in builder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
-            {
-                if (prop.ClrType == typeof(DateTimeOffset)) prop.SetValueConverter(toMs);
-                else if (prop.ClrType == typeof(DateTimeOffset?)) prop.SetValueConverter(toMsNullable);
-            }
+        foreach (var prop in builder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
+        {
+            if (prop.ClrType == typeof(DateTimeOffset)) prop.SetValueConverter(toUtc);
+            else if (prop.ClrType == typeof(DateTimeOffset?)) prop.SetValueConverter(toUtcNullable);
         }
 
         builder.Entity<Event>(e =>

@@ -34,6 +34,7 @@ public static class UploadEndpoints
             return Results.Ok(target);
         })
         .RequireAuthorization("Guest")
+        .RequireRateLimiting("upload")
         .WithName("CreateUpload");
 
         // Could instead react to a Blob Created event rather than a client callback.
@@ -48,8 +49,30 @@ public static class UploadEndpoints
             var ev = await db.Events.FindAsync(id);
             if (ev is null) return Results.NotFound();
 
-            var size = await blobs.GetSizeAsync(req.BlobPath);
-            if (size is null) return Results.BadRequest("Blob not found.");
+            var info = await blobs.GetBlobInfoAsync(req.BlobPath);
+            if (info is null) return Results.BadRequest("Blob not found.");
+            var (size, contentType) = info.Value;
+
+            if (contentType is null || !contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                await blobs.DeleteAsync(req.BlobPath);
+                return Results.BadRequest("Only image uploads are allowed.");
+            }
+
+            if (size > blobs.MaxBytes)
+            {
+                await blobs.DeleteAsync(req.BlobPath);
+                return Results.BadRequest("Photo exceeds the maximum allowed size.");
+            }
+
+            var cap = PlanLimits.For(ev.Tier).MaxPhotosPerGuest;
+            var count = await db.Photos.CountAsync(
+                p => p.EventId == id && p.UploadedByGuestId == guest.Id);
+            if (count >= cap)
+            {
+                await blobs.DeleteAsync(req.BlobPath);
+                return Results.Problem("Photo limit reached for this event.", statusCode: 403);
+            }
 
             var photo = new Photo
             {
@@ -57,13 +80,14 @@ public static class UploadEndpoints
                 BlobPath = req.BlobPath,
                 UploadedByGuestId = guest.Id,
                 Caption = req.Caption,
-                SizeBytes = size.Value,
+                SizeBytes = size,
             };
             db.Photos.Add(photo);
             await db.SaveChangesAsync();
             return Results.Ok(new { photo.Id });
         })
         .RequireAuthorization("Guest")
+        .RequireRateLimiting("upload")
         .WithName("CompleteUpload");
 
         group.MapGet("/photos", async (Guid id, PicknicDbContext db, BlobSasService blobs) =>

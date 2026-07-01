@@ -23,6 +23,15 @@ public class Event
 
     public required string HostId { get; set; }
 
+    /// <summary>Plan tier — "free" until a Stripe checkout is fulfilled. Drives <see cref="PlanLimits"/>.</summary>
+    public string Tier { get; set; } = "free";
+
+    /// <summary>Set by the Stripe webhook when checkout for an upgrade completes.</summary>
+    public DateTimeOffset? PaidAt { get; set; }
+
+    /// <summary>Set once guests have been notified the roll developed — prevents double-sends.</summary>
+    public DateTimeOffset? RevealNotifiedAt { get; set; }
+
     public List<Photo> Photos { get; set; } = [];
 
     public bool UploadOpen(DateTimeOffset now) =>

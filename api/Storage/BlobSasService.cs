@@ -33,6 +33,8 @@ public class BlobSasService(IOptions<StorageOptions> options)
 
     public bool Enabled => _opts.Enabled;
 
+    public long MaxBytes => _opts.MaxBytes;
+
     private BlobServiceClient Service() =>
         new(new Uri(_opts.AccountUrl), new DefaultAzureCredential());
 
@@ -63,6 +65,14 @@ public class BlobSasService(IOptions<StorageOptions> options)
         if (!await blob.ExistsAsync()) return null;
         var props = await blob.GetPropertiesAsync();
         return props.Value.ContentLength;
+    }
+
+    public async Task<(long Size, string? ContentType)?> GetBlobInfoAsync(string blobPath)
+    {
+        var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
+        if (!await blob.ExistsAsync()) return null;
+        var props = await blob.GetPropertiesAsync();
+        return (props.Value.ContentLength, props.Value.ContentType);
     }
 
     public async Task DeleteAsync(string blobPath)
