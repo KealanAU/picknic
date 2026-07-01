@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Picknic.Api.Data;
@@ -11,9 +12,11 @@ using Picknic.Api.Data;
 namespace Picknic.Api.Migrations
 {
     [DbContext(typeof(PicknicDbContext))]
-    partial class PicknicDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260701133722_PhotoBlobPathUnique")]
+    partial class PhotoBlobPathUnique
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

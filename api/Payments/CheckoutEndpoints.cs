@@ -44,6 +44,22 @@ public static class CheckoutEndpoints
 
             StripeConfiguration.ApiKey = stripe.SecretKey;
 
+            // Prefer a real dashboard Price ID when configured; otherwise fall back
+            // to an ad-hoc inline price so the flow works before products are set up.
+            var lineItem = stripe.Prices.TryGetValue(req.Plan, out var priceId)
+                && !string.IsNullOrWhiteSpace(priceId)
+                ? new SessionLineItemOptions { Quantity = 1, Price = priceId }
+                : new SessionLineItemOptions
+                {
+                    Quantity = 1,
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = "gbp",
+                        UnitAmount = plan.Amount,
+                        ProductData = new SessionLineItemPriceDataProductDataOptions { Name = plan.Name },
+                    },
+                };
+
             var session = await new SessionService().CreateAsync(new SessionCreateOptions
             {
                 Mode = "payment",
@@ -51,22 +67,7 @@ public static class CheckoutEndpoints
                 CancelUrl = stripe.CancelUrl,
                 ClientReferenceId = ev.Code,
                 Metadata = new() { ["plan"] = req.Plan, ["eventCode"] = ev.Code },
-                LineItems =
-                [
-                    new SessionLineItemOptions
-                    {
-                        Quantity = 1,
-                        PriceData = new SessionLineItemPriceDataOptions
-                        {
-                            Currency = "gbp",
-                            UnitAmount = plan.Amount,
-                            ProductData = new SessionLineItemPriceDataProductDataOptions
-                            {
-                                Name = plan.Name,
-                            },
-                        },
-                    },
-                ],
+                LineItems = [lineItem],
             });
 
             return Results.Ok(new { id = session.Id, url = session.Url });

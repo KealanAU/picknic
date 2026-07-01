@@ -3,9 +3,14 @@ project           = "picknic"
 environment       = "dev"
 location          = "uksouth"
 api_image_tag     = "latest"
-stripe_secret_key = "" # sk_live_... or sk_test_...
+web_origin        = "https://localhost:3000" # public web app origin (CORS + links)
+stripe_secret_key = ""                        # sk_live_... or sk_test_...
 
-postgres_admin_login    = "picknic"
+postgres_admin_username = "picknicadmin"
 postgres_admin_password = "" # strong password; required
 postgres_sku_name       = "B_Standard_B1ms"
 postgres_storage_mb     = 32768
+
+# Leave false for the first apply; flip to true and re-apply once the container
+# app is deployed and reachable (Event Grid validates the webhook at creation).
+enable_blob_events = false

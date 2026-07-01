@@ -29,6 +29,8 @@ builder.Services.Configure<GuestTokenOptions>(
     builder.Configuration.GetSection(GuestTokenOptions.SectionName));
 builder.Services.Configure<EmailOptions>(
     builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services.Configure<EventGridOptions>(
+    builder.Configuration.GetSection(EventGridOptions.SectionName));
 
 builder.Services.AddDbContext<PicknicDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Default")
@@ -73,6 +75,9 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddIdentityApiEndpoints<AppUser>()
     .AddEntityFrameworkStores<PicknicDbContext>();
+
+// Route Identity's confirm/reset emails through our provider instead of its no-op.
+builder.Services.AddTransient<IEmailSender<AppUser>, IdentityEmailSender>();
 
 // Guests authenticate on a separate JWT scheme, not Identity.
 var guestOpts = builder.Configuration.GetSection(GuestTokenOptions.SectionName).Get<GuestTokenOptions>()
@@ -197,6 +202,7 @@ app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
 
 app.MapEventEndpoints();
 app.MapUploadEndpoints();
+app.MapEventGridEndpoints();
 app.MapGuestEndpoints();
 app.MapInviteEndpoints();
 app.MapCheckoutEndpoints();

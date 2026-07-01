@@ -10,6 +10,12 @@ variable "environment" {
   description = "Deployment environment (dev, staging, prod)."
 }
 
+variable "enable_blob_events" {
+  type        = bool
+  default     = false
+  description = "Create the Event Grid subscription to the API's blob-created webhook. Enable only after the container app is deployed and reachable — Event Grid validates the endpoint when the subscription is created."
+}
+
 variable "location" {
   type        = string
   default     = "uksouth"

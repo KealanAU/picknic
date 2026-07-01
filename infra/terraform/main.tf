@@ -41,6 +41,12 @@ resource "random_password" "guest_signing_key" {
   special = false
 }
 
+# Shared secret Event Grid presents (?code=…) when calling the blob-created webhook.
+resource "random_password" "eventgrid_secret" {
+  length  = 32
+  special = false
+}
+
 resource "azurerm_resource_group" "main" {
   name     = "rg-${local.name}"
   location = var.location
@@ -203,6 +209,11 @@ resource "azurerm_container_app" "api" {
     value = random_password.guest_signing_key.result
   }
 
+  secret {
+    name  = "eventgrid-secret"
+    value = random_password.eventgrid_secret.result
+  }
+
   ingress {
     external_enabled = true
     target_port      = 8080
@@ -258,7 +269,40 @@ resource "azurerm_container_app" "api" {
         name  = "DataProtection__KeyVaultKeyId"
         value = azurerm_key_vault_key.dataprotection.versionless_id
       }
+      env {
+        name        = "EventGrid__Secret"
+        secret_name = "eventgrid-secret"
+      }
     }
+  }
+}
+
+# ---- Event Grid: register photos only once their blob has actually landed ----
+resource "azurerm_eventgrid_system_topic" "storage" {
+  name                   = "egst-${local.name}"
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  source_arm_resource_id = azurerm_storage_account.photos.id
+  topic_type             = "Microsoft.Storage.StorageAccounts"
+  tags                   = local.tags
+}
+
+# The subscription validates the webhook at creation, so it can only be created
+# after the container app is deployed and reachable — hence the toggle.
+resource "azurerm_eventgrid_system_topic_event_subscription" "blob_created" {
+  count               = var.enable_blob_events ? 1 : 0
+  name                = "photos-blob-created"
+  system_topic        = azurerm_eventgrid_system_topic.storage.name
+  resource_group_name = azurerm_resource_group.main.name
+
+  included_event_types = ["Microsoft.Storage.BlobCreated"]
+
+  subject_filter {
+    subject_begins_with = "/blobServices/default/containers/${azurerm_storage_container.photos.name}/blobs/"
+  }
+
+  webhook_endpoint {
+    url = "https://${azurerm_container_app.api.ingress[0].fqdn}/api/uploads/events?code=${random_password.eventgrid_secret.result}"
   }
 }
 

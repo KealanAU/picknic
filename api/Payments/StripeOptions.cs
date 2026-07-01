@@ -12,6 +12,12 @@ public class StripeOptions
     public string SecretKey { get; set; } = string.Empty;
     public string? WebhookSecret { get; set; }
 
+    /// <summary>
+    /// Plan -> Stripe Price ID (price_...). When a plan has one, checkout uses it
+    /// instead of the ad-hoc inline price. Bound from "Stripe:Prices:{plan}".
+    /// </summary>
+    public Dictionary<string, string> Prices { get; set; } = new();
+
     public string SuccessUrl { get; set; } = "http://localhost:3000/checkout/success?session_id={CHECKOUT_SESSION_ID}";
     public string CancelUrl { get; set; } = "http://localhost:3000/checkout/cancel";
 

@@ -42,6 +42,13 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<Photo>(p =>
+        {
+            // Makes photo registration idempotent — the Event Grid handler and the
+            // client callback can both fire for one upload without duplicating it.
+            p.HasIndex(x => x.BlobPath).IsUnique();
+        });
+
         builder.Entity<Guest>(g =>
         {
             g.Property(x => x.DisplayName).HasMaxLength(80);

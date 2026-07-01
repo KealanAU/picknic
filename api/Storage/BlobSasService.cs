@@ -38,10 +38,15 @@ public class BlobSasService(IOptions<StorageOptions> options)
     private BlobServiceClient Service() =>
         new(new Uri(_opts.AccountUrl), new DefaultAzureCredential());
 
+    /// <summary>The blob container photos live in — used to parse Event Grid subjects.</summary>
+    public string Container => _opts.Container;
+
     public async Task<UploadTarget> CreateUploadSasAsync(
-        Guid eventId, DateTimeOffset expiresAt)
+        Guid eventId, Guid guestId, DateTimeOffset expiresAt)
     {
-        var blobPath = $"{eventId}/{Guid.NewGuid():n}.jpg";
+        // Guest id is in the path so an Event Grid BlobCreated handler can
+        // attribute the photo without trusting a client callback.
+        var blobPath = $"{eventId}/{guestId}/{Guid.NewGuid():n}.jpg";
         var service = Service();
         var blob = service.GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
 
