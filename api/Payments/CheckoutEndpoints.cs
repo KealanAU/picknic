@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Picknic.Api.Data;
+using Picknic.Api.Models;
 using Stripe;
 using Stripe.Checkout;
 
@@ -19,7 +22,12 @@ public static class CheckoutEndpoints
 
     public static IEndpointRouteBuilder MapCheckoutEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/checkout", (CheckoutRequest req, IOptions<StripeOptions> opts) =>
+        // The host starts an upgrade for an event they own. Payment methods are
+        // left to Stripe's automatic selection, so Apple Pay / Google Pay / cards
+        // appear on the hosted Checkout page per the account's dashboard settings.
+        app.MapPost("/api/checkout", async (
+            CheckoutRequest req, ClaimsPrincipal user,
+            IOptions<StripeOptions> opts, PicknicDbContext db) =>
         {
             var stripe = opts.Value;
             if (!stripe.Enabled)
@@ -28,15 +36,21 @@ public static class CheckoutEndpoints
             if (!Plans.TryGetValue(req.Plan, out var plan))
                 return Results.BadRequest(new { error = $"Unknown plan '{req.Plan}'." });
 
+            var hostId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var code = req.EventCode.ToUpperInvariant();
+            var ev = await db.Events.FirstOrDefaultAsync(e => e.Code == code);
+            if (ev is null) return Results.NotFound();
+            if (ev.HostId != hostId) return Results.Forbid();
+
             StripeConfiguration.ApiKey = stripe.SecretKey;
 
-            var session = new SessionService().Create(new SessionCreateOptions
+            var session = await new SessionService().CreateAsync(new SessionCreateOptions
             {
                 Mode = "payment",
                 SuccessUrl = stripe.SuccessUrl,
                 CancelUrl = stripe.CancelUrl,
-                ClientReferenceId = req.EventCode,
-                Metadata = new() { ["plan"] = req.Plan, ["eventCode"] = req.EventCode },
+                ClientReferenceId = ev.Code,
+                Metadata = new() { ["plan"] = req.Plan, ["eventCode"] = ev.Code },
                 LineItems =
                 [
                     new SessionLineItemOptions
@@ -57,6 +71,7 @@ public static class CheckoutEndpoints
 
             return Results.Ok(new { id = session.Id, url = session.Url });
         })
+        .RequireAuthorization("Host")
         .RequireRateLimiting("checkout")
         .WithName("CreateCheckoutSession");
 
@@ -79,6 +94,10 @@ public static class CheckoutEndpoints
                 return Results.BadRequest();
             }
 
+            // Stripe delivers at-least-once; skip anything already handled.
+            if (await db.ProcessedStripeEvents.AnyAsync(e => e.Id == stripeEvent.Id))
+                return Results.Ok();
+
             if (stripeEvent.Type == "checkout.session.completed")
             {
                 var session = stripeEvent.Data.Object as Stripe.Checkout.Session;
@@ -96,10 +115,20 @@ public static class CheckoutEndpoints
                         {
                             ev.Tier = plan;
                             ev.PaidAt = DateTimeOffset.UtcNow;
-                            await db.SaveChangesAsync();
                         }
                     }
                 }
+            }
+
+            // Record the event as handled in the same transaction as any fulfillment.
+            db.ProcessedStripeEvents.Add(new ProcessedStripeEvent { Id = stripeEvent.Id });
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // A concurrent delivery already recorded it — treat as success.
             }
 
             return Results.Ok();

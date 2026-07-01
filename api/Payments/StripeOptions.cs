@@ -12,8 +12,8 @@ public class StripeOptions
     public string SecretKey { get; set; } = string.Empty;
     public string? WebhookSecret { get; set; }
 
-    public string SuccessUrl { get; set; } = "http://localhost:5173/checkout/success";
-    public string CancelUrl { get; set; } = "http://localhost:5173/checkout/cancel";
+    public string SuccessUrl { get; set; } = "http://localhost:3000/checkout/success?session_id={CHECKOUT_SESSION_ID}";
+    public string CancelUrl { get; set; } = "http://localhost:3000/checkout/cancel";
 
     public bool Enabled => !string.IsNullOrWhiteSpace(SecretKey);
 }

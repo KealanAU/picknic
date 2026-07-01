@@ -12,6 +12,7 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
     public DbSet<Photo> Photos => Set<Photo>();
     public DbSet<Guest> Guests => Set<Guest>();
     public DbSet<Invite> Invites => Set<Invite>();
+    public DbSet<ProcessedStripeEvent> ProcessedStripeEvents => Set<ProcessedStripeEvent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -51,6 +52,12 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
         {
             i.Property(x => x.Email).HasMaxLength(256);
             i.HasIndex(x => new { x.EventId, x.Email }).IsUnique();
+        });
+
+        builder.Entity<ProcessedStripeEvent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(255);
         });
     }
 }
