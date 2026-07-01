@@ -50,7 +50,7 @@ pnpm dev   # scan with the Lynx Explorer app
 
 ### Everything via Docker
 ```bash
-docker compose up --build   # api on :5000, web (SSR) on :3000
+docker compose up --build   # api on :8080, web (SSR) on :3000
 ```
 
 ## Payments (Stripe)

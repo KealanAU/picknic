@@ -1,5 +1,6 @@
-# Local dev stack: API + web (Nuxt SSR). Photos use in-memory storage in the
-# scaffold; point Stripe__SecretKey / Azure storage at real values via a .env.
+# Local full stack: Postgres + API (.NET) + web (Nuxt SSR).
+# Optional integrations (Stripe, Azure Blob, email) stay off unless you supply
+# their values — copy .env.example to .env and fill in what you need.
 services:
   db:
     image: postgres:17
@@ -20,24 +21,37 @@ services:
   api:
     build: ./api
     ports:
-      - "5000:8080"
+      # Host 8080 (not 5000 — macOS AirPlay Receiver hijacks 5000).
+      - "8080:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: "Host=db;Database=picknic;Username=picknic;Password=picknic"
+      # Optional — leave unset to run without these integrations.
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
+      Storage__AccountUrl: ${STORAGE_ACCOUNT_URL:-}
+      Email__ConnectionString: ${EMAIL_CONNECTION_STRING:-}
+      Email__FromAddress: ${EMAIL_FROM_ADDRESS:-}
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
 
   web:
     build: ./web
     ports:
       - "3000:3000"
     environment:
+      # Runtime API target for the /api proxy (server/routes/api/[...].ts).
       NUXT_API_BASE: http://api:8080
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:

@@ -21,20 +21,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Server-side only; used by Nitro to proxy/call the API.
+    // Overridable at runtime via NUXT_API_BASE. Consumed by the /api proxy
+    // handler (server/routes/api/[...].ts) so browser + SSR share one origin.
     apiBase: process.env.NUXT_API_BASE || 'http://localhost:5000',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-    },
-  },
-
-  // Proxy /api to the .NET backend so the browser and SSR share one origin.
-  nitro: {
-    devProxy: {
-      '/api': { target: 'http://localhost:5000', changeOrigin: true },
-    },
-    routeRules: {
-      '/api/**': { proxy: `${process.env.NUXT_API_BASE || 'http://localhost:5000'}/api/**` },
     },
   },
 
