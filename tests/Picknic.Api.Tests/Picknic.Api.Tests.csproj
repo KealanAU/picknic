@@ -8,10 +8,18 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <!-- Resolve ASP.NET Core deps (incl. Data Protection) from the shared
+       framework, matching the Web SDK API project. Without this the test graph
+       restores the standalone System.Security.Cryptography.Xml 8.0.2 package,
+       which carries known advisories the framework version doesn't. -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
 
   <ItemGroup>
