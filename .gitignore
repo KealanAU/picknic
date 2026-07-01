@@ -16,6 +16,11 @@ dist/
 *.tsbuildinfo
 .vite/
 
+# ---- Nuxt ----
+.nuxt/
+.output/
+.data/
+
 # ---- Env & secrets (never commit) ----
 .env
 .env.*

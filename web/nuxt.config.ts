@@ -4,6 +4,9 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
 
+  // The Amplemarket brand is a light-only system — the atmosphere needs a white canvas.
+  colorMode: { preference: 'light', fallback: 'light' },
+
   // SSR is on by default — kept explicit for the SEO use case.
   ssr: true,
 
@@ -12,7 +15,7 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'en' },
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'theme-color', content: '#e9573f' },
+        { name: 'theme-color', content: '#ffffff' },
       ],
     },
   },
@@ -41,8 +44,8 @@ export default defineNuxtConfig({
       name: 'Picknic',
       short_name: 'Picknic',
       description: 'Shared event camera — one roll, revealed at the end.',
-      theme_color: '#e9573f',
-      background_color: '#fdf6ec',
+      theme_color: '#ffffff',
+      background_color: '#ffffff',
       display: 'standalone',
     },
   },
