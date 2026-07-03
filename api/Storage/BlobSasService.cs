@@ -9,37 +9,61 @@ public class StorageOptions
 {
     public const string SectionName = "Storage";
 
-    /// <summary>e.g. https://picknicdev.blob.core.windows.net — empty disables storage.</summary>
+    /// <summary>e.g. https://picknicdev.blob.core.windows.net — used with managed identity in prod.</summary>
     public string AccountUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Account-key connection string (Azurite / local dev). When set, the service
+    /// signs account-key SAS instead of Entra ID user-delegation SAS.
+    /// </summary>
+    public string ConnectionString { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional host to rewrite generated SAS URLs to (e.g. http://localhost:10000/devstoreaccount1),
+    /// so a browser can reach Azurite even though the API talks to it as "azurite".
+    /// </summary>
+    public string PublicEndpoint { get; set; } = string.Empty;
+
     public string Container { get; set; } = "photos";
 
     /// <summary>Max accepted photo size; enforced on the complete callback.</summary>
     public long MaxBytes { get; set; } = 25 * 1024 * 1024;
 
-    public bool Enabled => !string.IsNullOrWhiteSpace(AccountUrl);
+    public bool Enabled =>
+        !string.IsNullOrWhiteSpace(AccountUrl) || !string.IsNullOrWhiteSpace(ConnectionString);
 }
 
 public record UploadTarget(string UploadUrl, string BlobPath);
 
 /// <summary>
-/// Mints user-delegation SAS (signed via Entra ID / managed identity, no
-/// account key). Upload SAS is create/write-only on a single, server-named
-/// blob and expires at the upload window close — so a leaked SAS can't read the
-/// gallery, overwrite others, or outlive the deadline.
+/// Mints SAS for photo blobs. In production it uses Entra ID / managed-identity
+/// user-delegation SAS (no account key). When a connection string is configured
+/// (Azurite / local dev), it falls back to account-key SAS, since the emulator
+/// doesn't support user delegation. Upload SAS is create/write-only on a single,
+/// server-named blob and expires at the upload window close.
 /// </summary>
 public class BlobSasService(IOptions<StorageOptions> options)
 {
     private readonly StorageOptions _opts = options.Value;
+    private readonly bool _useConnectionString = !string.IsNullOrWhiteSpace(options.Value.ConnectionString);
 
     public bool Enabled => _opts.Enabled;
 
     public long MaxBytes => _opts.MaxBytes;
 
-    private BlobServiceClient Service() =>
-        new(new Uri(_opts.AccountUrl), new DefaultAzureCredential());
+    private BlobServiceClient Service() => _useConnectionString
+        ? new BlobServiceClient(_opts.ConnectionString)
+        : new BlobServiceClient(new Uri(_opts.AccountUrl), new DefaultAzureCredential());
 
     /// <summary>The blob container photos live in — used to parse Event Grid subjects.</summary>
     public string Container => _opts.Container;
+
+    /// <summary>Creates the container if missing — used in dev/emulator where Terraform hasn't.</summary>
+    public async Task InitializeAsync()
+    {
+        if (!Enabled || !_useConnectionString) return;
+        await Service().GetBlobContainerClient(_opts.Container).CreateIfNotExistsAsync();
+    }
 
     public async Task<UploadTarget> CreateUploadSasAsync(
         Guid eventId, Guid guestId, DateTimeOffset expiresAt)
@@ -47,22 +71,13 @@ public class BlobSasService(IOptions<StorageOptions> options)
         // Guest id is in the path so an Event Grid BlobCreated handler can
         // attribute the photo without trusting a client callback.
         var blobPath = $"{eventId}/{guestId}/{Guid.NewGuid():n}.jpg";
-        var service = Service();
-        var blob = service.GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
-
-        var sas = await BuildSasAsync(service, blobPath,
+        var url = await SignedUriAsync(blobPath,
             BlobSasPermissions.Create | BlobSasPermissions.Write, expiresAt);
-
-        return new UploadTarget($"{blob.Uri}?{sas}", blobPath);
+        return new UploadTarget(url, blobPath);
     }
 
-    public async Task<string> CreateReadSasAsync(string blobPath, DateTimeOffset expiresAt)
-    {
-        var service = Service();
-        var blob = service.GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
-        var sas = await BuildSasAsync(service, blobPath, BlobSasPermissions.Read, expiresAt);
-        return $"{blob.Uri}?{sas}";
-    }
+    public Task<string> CreateReadSasAsync(string blobPath, DateTimeOffset expiresAt) =>
+        SignedUriAsync(blobPath, BlobSasPermissions.Read, expiresAt);
 
     public async Task<long?> GetSizeAsync(string blobPath)
     {
@@ -86,13 +101,12 @@ public class BlobSasService(IOptions<StorageOptions> options)
         await blob.DeleteIfExistsAsync();
     }
 
-    private async Task<string> BuildSasAsync(
-        BlobServiceClient service, string blobPath,
-        BlobSasPermissions perms, DateTimeOffset expiresAt)
+    private async Task<string> SignedUriAsync(
+        string blobPath, BlobSasPermissions perms, DateTimeOffset expiresAt)
     {
+        var service = Service();
+        var blob = service.GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         var now = DateTimeOffset.UtcNow;
-        var key = await service.GetUserDelegationKeyAsync(
-            startsOn: now.AddMinutes(-2), expiresOn: expiresAt, cancellationToken: default);
 
         var builder = new BlobSasBuilder
         {
@@ -101,12 +115,37 @@ public class BlobSasService(IOptions<StorageOptions> options)
             Resource = "b",
             StartsOn = now.AddMinutes(-2),
             ExpiresOn = expiresAt,
-            Protocol = SasProtocol.Https,
+            // Azurite serves http; production is https-only.
+            Protocol = _useConnectionString ? SasProtocol.HttpsAndHttp : SasProtocol.Https,
         };
         builder.SetPermissions(perms);
 
-        return builder
-            .ToSasQueryParameters(key.Value, service.AccountName)
-            .ToString();
+        string url;
+        if (_useConnectionString)
+        {
+            // Account-key SAS — the connection-string client carries the shared key.
+            url = blob.GenerateSasUri(builder).ToString();
+        }
+        else
+        {
+            var key = await service.GetUserDelegationKeyAsync(
+                startsOn: now.AddMinutes(-2), expiresOn: expiresAt, cancellationToken: default);
+            var sas = builder.ToSasQueryParameters(key.Value, service.AccountName).ToString();
+            url = $"{blob.Uri}?{sas}";
+        }
+
+        return RewriteHost(service, url);
+    }
+
+    // The SAS signature covers the account + path, not the host — so we can swap
+    // the internal Azurite host ("azurite") for a browser-reachable one ("localhost").
+    private string RewriteHost(BlobServiceClient service, string url)
+    {
+        if (string.IsNullOrWhiteSpace(_opts.PublicEndpoint)) return url;
+        var internalBase = service.Uri.ToString().TrimEnd('/');
+        var publicBase = _opts.PublicEndpoint.TrimEnd('/');
+        return url.StartsWith(internalBase, StringComparison.OrdinalIgnoreCase)
+            ? string.Concat(publicBase, url.AsSpan(internalBase.Length))
+            : url;
     }
 }

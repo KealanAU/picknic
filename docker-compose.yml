@@ -18,6 +18,16 @@ services:
       timeout: 5s
       retries: 5
 
+  # Local Azure Blob Storage emulator — stands in for real Blob Storage so the
+  # photo upload/gallery flow works without an Azure account.
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    ports:
+      - "10000:10000"
+    volumes:
+      - azurite:/data
+
   api:
     build: ./api
     ports:
@@ -26,15 +36,20 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: "Host=db;Database=picknic;Username=picknic;Password=picknic"
+      # Photo storage via the Azurite emulator (account-key SAS). PublicEndpoint
+      # rewrites SAS URLs to localhost so the browser can reach the emulator.
+      Storage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+      Storage__PublicEndpoint: "http://localhost:10000/devstoreaccount1"
       # Optional — leave unset to run without these integrations.
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
-      Storage__AccountUrl: ${STORAGE_ACCOUNT_URL:-}
       Email__ConnectionString: ${EMAIL_CONNECTION_STRING:-}
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-}
     depends_on:
       db:
         condition: service_healthy
+      azurite:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/health"]
       interval: 10s
@@ -55,3 +70,4 @@ services:
 
 volumes:
   pgdata:
+  azurite:

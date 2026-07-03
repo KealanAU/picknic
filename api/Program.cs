@@ -174,6 +174,9 @@ using (var scope = app.Services.CreateScope())
         unlockCmd.CommandText = "SELECT pg_advisory_unlock(4242424242)";
         await unlockCmd.ExecuteNonQueryAsync();
     }
+
+    // Ensure the photos container exists when running against the emulator.
+    await scope.ServiceProvider.GetRequiredService<BlobSasService>().InitializeAsync();
 }
 
 if (app.Environment.IsDevelopment())

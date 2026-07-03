@@ -52,6 +52,11 @@ pnpm dev   # scan with the Lynx Explorer app
 ```bash
 docker compose up --build   # api on :8080, web (SSR) on :3000
 ```
+The compose stack includes **Azurite** (Azure Blob emulator) on `:10000`, so the
+full photo upload → gallery flow works locally with no Azure account. The API
+signs account-key SAS against Azurite in dev and switches to managed-identity
+user-delegation SAS in production automatically. Event Grid isn't emulated —
+locally, photos register via the `/uploads/complete` client callback instead.
 
 ## Payments (Stripe)
 
