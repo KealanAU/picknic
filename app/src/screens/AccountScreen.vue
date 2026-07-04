@@ -10,12 +10,20 @@ const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 
+// Direction of the last mode swap, so the headline slides in from the side that
+// matches the toggle: forward (→ register) enters from the right, back (→ login)
+// from the left. Drives which keyframe class the keyed header replays.
+const dir = ref<'fwd' | 'back'>('fwd');
+const headerAnim = computed(() => (dir.value === 'fwd' ? 'pk-swap-right' : 'pk-swap-left'));
+
 const title = computed(() => (mode.value === 'login' ? 'Welcome back' : 'Create your account'));
 const cta = computed(() => (mode.value === 'login' ? 'Log in' : 'Sign up'));
 const canSubmit = computed(() => !!email.value && password.value.length >= 6 && !isBusy.value);
 
 function toggle() {
-  mode.value = mode.value === 'login' ? 'register' : 'login';
+  const next = mode.value === 'login' ? 'register' : 'login';
+  dir.value = next === 'register' ? 'fwd' : 'back';
+  mode.value = next;
 }
 
 async function submit() {
@@ -31,8 +39,10 @@ async function submit() {
 
 <template>
   <view :style="{ width: '100%' }">
-    <VyCard :style="{ width: '100%' }">
-      <view :style="{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '20px' }">
+    <!-- Flat on the cream canvas — no card chrome (bg/border/rounding) so the
+         auth form reads as part of the page, not a separated surface. -->
+    <view :style="{ width: '100%' }">
+      <view :key="mode" :class="headerAnim" :style="{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '20px' }">
         <text :style="{ fontFamily: t.font.display, fontSize: '38px', fontWeight: '300', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">{{ title }}</text>
         <text :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }">Hosts create and manage Picknic events.</text>
       </view>
@@ -88,6 +98,6 @@ async function submit() {
       <VyButton variant="ghost" size="lg" block :style="{ marginTop: '6px' }" @click="toggle">
         {{ mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Log in' }}
       </VyButton>
-    </VyCard>
+    </view>
   </view>
 </template>

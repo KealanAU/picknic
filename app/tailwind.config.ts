@@ -45,13 +45,19 @@ const config: Config = {
     // utilities they use actually get generated.
     './node_modules/@vyui/kit/dist/**/*.js',
   ],
-  // The kit builds its color classes at runtime (`bg-${c}-500`, `text-${c}-600`,
-  // `border-${c}-500`, …) so Tailwind's static scan can't see them — without
-  // this, solid/soft/ghost buttons and input focus rings render with no fill.
-  // Safelist the semantic scales the app actually uses (primary + neutral),
-  // including the `active:` pressed state, plus the solid-button `text-white`.
+  // createVyuiPreset() ships a safelist for the kit's runtime-built color
+  // classes (`bg-${c}-500`, …) which Tailwind's static scan can't see. Its
+  // default covers all 6 semantic scales × 11 shades × ~27 state variants,
+  // which balloons the Lynx bundle to ~6.7 MB. A top-level `safelist` REPLACES
+  // the preset's (Tailwind resolves safelist first-defined-wins, not merge), so
+  // we scope it to what this app renders: primary + neutral, the shades the kit
+  // themes emit, and the handful of state variants we actually use — press is
+  // `data-[state=active]` (vyui core drives it via a data attr, not CSS :active).
   safelist: [
-    { pattern: /(bg|text|border)-(primary|neutral)-(50|100|200|300|500|600|700)/, variants: ['active'] },
+    {
+      pattern: /(bg|text|ring|border)-(primary|neutral)-(50|100|200|300|400|500|600|700|900)/,
+      variants: ['active', 'focus', 'disabled', 'data-[state=active]', 'ui-highlighted'],
+    },
     'text-white',
   ],
   presets: [lynxPreset, createVyuiPreset()],
