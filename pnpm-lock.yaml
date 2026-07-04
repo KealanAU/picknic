@@ -32,9 +32,6 @@ importers:
       '@lynx-js/tailwind-preset':
         specifier: ^0.5.0
         version: 0.5.0(tailwindcss@3.4.19(yaml@2.9.0))
-      '@lynx-js/web-rsbuild-server-middleware':
-        specifier: ^0.19.9
-        version: 0.19.9
       '@rsbuild/core':
         specifier: ^1.0.0
         version: 1.7.6
