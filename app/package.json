@@ -8,13 +8,20 @@
     "build": "rspeedy build"
   },
   "dependencies": {
-    "vue-lynx": "^0.4.1",
-    "@vyui/core": "^0.0.6",
-    "@vyui/kit": "^0.0.4"
+    "@vyui/core": "^0.1.1",
+    "@vyui/kit": "^0.1.1",
+    "vue": "^3.5.0",
+    "vue-lynx": "^0.4.0"
   },
   "devDependencies": {
+    "@lynx-js/qrcode-rsbuild-plugin": "0.4.7",
     "@lynx-js/rspeedy": "^0.13.5",
+    "@lynx-js/tailwind-preset": "^0.5.0",
+    "@lynx-js/web-rsbuild-server-middleware": "^0.19.9",
+    "@rsbuild/core": "^1.0.0",
     "@rsbuild/plugin-vue": "^1.2.6",
+    "rsbuild-plugin-tailwindcss": "^0.2.4",
+    "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0"
   },
   "engines": {
