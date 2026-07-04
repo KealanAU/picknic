@@ -64,7 +64,15 @@ export default defineConfig({
     }),
     pluginTailwindCSS({
       config: 'tailwind.config.ts',
-      exclude: [/[\\/]node_modules[\\/]/],
+      // This plugin rebuilds Tailwind's `content` from the bundled module graph
+      // and drops anything matching `exclude`. Excluding all of node_modules
+      // meant @vyui/kit's component class strings (button padding/rounding/flex,
+      // input borders, …) were never scanned, so kit components rendered as
+      // unstyled boxes. Keep node_modules excluded for speed, but let @vyui
+      // through so its dist classes get generated. (The kit's dynamically-built
+      // color classes — `bg-${c}-500` — still can't be statically extracted;
+      // those are covered by the safelist in tailwind.config.ts.)
+      exclude: [/[\\/]node_modules[\\/](?!.*@vyui)/],
     }),
   ],
 });
