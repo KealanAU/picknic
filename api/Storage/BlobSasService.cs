@@ -1,5 +1,6 @@
 using Azure.Identity;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Microsoft.Extensions.Options;
 
@@ -99,6 +100,31 @@ public class BlobSasService(IOptions<StorageOptions> options)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         await blob.DeleteIfExistsAsync();
+    }
+
+    /// <summary>Opens a blob for reading server-side (e.g. to develop a photo). Null if absent.</summary>
+    public async Task<Stream?> OpenReadAsync(string blobPath)
+    {
+        var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
+        if (!await blob.ExistsAsync()) return null;
+        return await blob.OpenReadAsync();
+    }
+
+    /// <summary>Writes bytes to a blob server-side, overwriting, with the given content type.</summary>
+    public async Task UploadAsync(string blobPath, byte[] content, string contentType)
+    {
+        var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
+        using var ms = new MemoryStream(content);
+        await blob.UploadAsync(ms, new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders { ContentType = contentType },
+        });
+    }
+
+    public async Task<bool> ExistsAsync(string blobPath)
+    {
+        var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
+        return await blob.ExistsAsync();
     }
 
     private async Task<string> SignedUriAsync(

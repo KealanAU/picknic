@@ -1,0 +1,72 @@
+/*
+ * Picknic global style entry. Imported once from src/index.ts.
+ *
+ *   1. vyui token + animation layer (@vyui/kit/style.css)
+ *   2. Tailwind base + utilities (generated from tailwind.config.ts)
+ *   3. Brand fonts (Editorial New display serif + Founders Grotesk grotesk)
+ *   4. vyui shorthand-token overrides so `bg-primary` matches the Voltage scale
+ *
+ * The palette itself lives in tailwind.config.ts (static hex) and is mirrored
+ * for inline styles in src/theme/tokens.ts.
+ *
+ * Aesthetic: Drive Capital "Summer Drive" — cream canvas, single Voltage Blue
+ * accent, flat surfaces separated only by Ash hairlines, tight -0.02em tracking.
+ */
+@import '@vyui/kit/style.css';
+
+@tailwind base;
+@tailwind utilities;
+
+/*
+ * Comico is loaded through the host app when it is available. Use Lynx's
+ * local() font source so native can resolve a registered/bundled font without
+ * Rspeedy rewriting a file URL to the unsupported `webpack:///` scheme.
+ */
+@font-face {
+  font-family: 'Comico';
+  src: local('Comico'), local('Comico Regular'), local('Comico-Regular');
+}
+
+/* Voltage Blue accent — tracked tight, monochrome on cream. */
+:root {
+  --color-cream: #fff8f1;
+  --color-ash: #e2e8f0;
+  --color-ink: #000000;
+  --color-voltage-blue: #006eff;
+  letter-spacing: -0.02em;
+  font-feature-settings: 'clig', 'liga';
+}
+
+/*
+ * vyui's shorthand utilities (`bg-primary`, `text-primary`) read the mode-tier
+ * `--ui-*` vars, which default to green/slate in @vyui/kit/style.css. The scale
+ * utilities (`primary-500`) come from our static Tailwind palette; pin the
+ * shorthand vars to match so both agree on the brand.
+ */
+:root {
+  --ui-primary: #006eff;   /* voltage-500 */
+  --ui-secondary: #004299; /* voltage-700 */
+}
+
+.dark {
+  --ui-primary: #006eff;
+  --ui-secondary: #3385ff; /* voltage-400 */
+}
+
+/*
+ * Section swap micro-transitions. vue-lynx's renderer has no <Transition>
+ * component (that lives in @vue/runtime-dom), so instead of enter/leave hooks
+ * we replay a CSS keyframe: give the node a :key that changes on swap and Vue
+ * remounts it, running the animation fresh. Lynx supports @keyframes + the
+ * `animation` shorthand natively, so this works on device, not just web.
+ */
+@keyframes pk-swap-from-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pk-swap-from-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.pk-swap-right { animation: pk-swap-from-right 260ms ease-out both; }
+.pk-swap-left  { animation: pk-swap-from-left  260ms ease-out both; }

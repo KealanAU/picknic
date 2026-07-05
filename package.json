@@ -1,0 +1,8 @@
+{
+  "name": "picknic",
+  "private": true,
+  "packageManager": "pnpm@11.4.0",
+  "scripts": {
+    "dev:app": "pnpm --filter picknic-app run dev"
+  }
+}

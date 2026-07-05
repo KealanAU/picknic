@@ -10,6 +10,13 @@ const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 
+const emailInput = computed({
+  get: () => email.value,
+  set: (value: string) => {
+    email.value = value.trim().toLowerCase();
+  },
+});
+
 // Direction of the last mode swap, so the headline slides in from the side that
 // matches the toggle: forward (→ register) enters from the right, back (→ login)
 // from the left. Drives which keyframe class the keyed header replays.
@@ -43,18 +50,18 @@ async function submit() {
          auth form reads as part of the page, not a separated surface. -->
     <view :style="{ width: '100%' }">
       <view :key="mode" :class="headerAnim" :style="{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '20px' }">
-        <text :style="{ fontFamily: t.font.display, fontSize: '38px', fontWeight: '300', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">{{ title }}</text>
+        <text :style="{ fontFamily: t.font.display, fontSize: '38px', fontWeight: '400', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">{{ title }}</text>
         <text :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }">Hosts create and manage Picknic events.</text>
       </view>
 
       <VyForm class="flex flex-col items-stretch w-full gap-4">
         <VyFormField label="Email">
           <VyInput
-            v-model="email"
+            v-model="emailInput"
             type="email"
             size="xl"
             autocomplete="email"
-            leading-icon="lucide:mail"
+            leading-icon="streamline:envelope-letter-front"
             placeholder="you@example.com"
           />
         </VyFormField>
@@ -70,7 +77,7 @@ async function submit() {
             <template #trailing="{ iconColor }">
               <view @tap="showPassword = !showPassword" :style="{ padding: '4px' }">
                 <VyIcon
-                  :name="showPassword ? 'lucide:eye-off' : 'lucide:eye'"
+                  :name="showPassword ? 'streamline:view-eye-off' : 'streamline:view-eye-1'"
                   :style="{ color: iconColor }"
                 />
               </view>

@@ -1,0 +1,65 @@
+<script setup lang="ts">
+// The primary action: an outlined Voltage Blue pill. Transparent fill, 1.5px
+// blue border, blue grotesk label in uppercase — the outline IS the button.
+// 60px radius, flat (no shadow); press feedback is a subtle opacity dip only.
+// The `variant` prop is retained for API compatibility; both variants render
+// outlined per the Drive Capital system (filled buttons are disallowed).
+import { computed, ref } from 'vue';
+import { t } from '../theme/tokens';
+
+const props = withDefaults(
+  defineProps<{
+    variant?: 'solid' | 'soft';
+    disabled?: boolean;
+    block?: boolean;
+  }>(),
+  { variant: 'solid', disabled: false, block: false },
+);
+
+const emit = defineEmits<{ (e: 'tap'): void }>();
+
+const pressed = ref(false);
+
+const rootStyle = computed(() => ({
+  display: 'flex',
+  flexDirection: 'row' as const,
+  alignItems: 'center',
+  justifyContent: 'center',
+  alignSelf: props.block ? 'stretch' : 'flex-start',
+  paddingLeft: '43px',
+  paddingRight: '43px',
+  paddingTop: '14px',
+  paddingBottom: '14px',
+  backgroundColor: 'transparent',
+  borderRadius: t.radius.pill,
+  borderWidth: '1.5px',
+  borderStyle: 'solid' as const,
+  borderColor: t.color.blue,
+  opacity: props.disabled ? 0.4 : pressed.value ? 0.6 : 1,
+}));
+
+const textStyle = computed(() => ({
+  fontFamily: t.font.body,
+  fontSize: '16px',
+  fontWeight: '300' as const,
+  letterSpacing: t.tracking,
+  textTransform: 'uppercase' as const,
+  color: t.color.blue,
+}));
+
+function onTap() {
+  if (!props.disabled) emit('tap');
+}
+</script>
+
+<template>
+  <view
+    :style="rootStyle"
+    @tap="onTap"
+    @touchstart="pressed = true"
+    @touchend="pressed = false"
+    @touchcancel="pressed = false"
+  >
+    <text :style="textStyle"><slot /></text>
+  </view>
+</template>

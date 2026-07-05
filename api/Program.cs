@@ -12,6 +12,7 @@ using Picknic.Api.Auth;
 using Picknic.Api.Data;
 using Picknic.Api.Email;
 using Picknic.Api.Endpoints;
+using Picknic.Api.FilmProcessing;
 using Picknic.Api.Models;
 using Picknic.Api.Notifications;
 using Picknic.Api.Payments;
@@ -111,6 +112,12 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<GuestTokenService>();
 builder.Services.AddScoped<BlobSasService>();
+
+// Film-look pipeline: codec + processor are stateless (singletons); the developer
+// depends on the scoped BlobSasService, so it's scoped too.
+builder.Services.AddSingleton<IImageCodec, SkiaImageCodec>();
+builder.Services.AddSingleton<IFilmProcessor, FilmProcessor>();
+builder.Services.AddScoped<FilmDeveloper>();
 builder.Services.AddSingleton<JoinSecretProtector>();
 builder.Services.AddSingleton<EventLinks>();
 // Real email via Azure Communication Services when configured; otherwise log.
@@ -206,6 +213,7 @@ app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
 app.MapEventEndpoints();
 app.MapUploadEndpoints();
 app.MapEventGridEndpoints();
+app.MapFilmEndpoints();
 app.MapGuestEndpoints();
 app.MapInviteEndpoints();
 app.MapCheckoutEndpoints();

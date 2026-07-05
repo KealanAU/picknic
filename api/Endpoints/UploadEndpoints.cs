@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Picknic.Api.Auth;
 using Picknic.Api.Data;
+using Picknic.Api.FilmProcessing;
 using Picknic.Api.Models;
 using Picknic.Api.Storage;
 
@@ -91,6 +92,16 @@ public static class UploadEndpoints
             var names = await db.Guests.Where(g => g.EventId == id)
                 .ToDictionaryAsync(g => g.Id, g => g.DisplayName);
             var expiry = now.AddHours(1);
+
+            // Serve the developed (film-look) derivative when it exists, else the
+            // original. Keeps develop fully optional and decoupled from upload.
+            async Task<string?> ReadUrl(Photo p)
+            {
+                var devPath = FilmDeveloper.DevelopedPath(p.BlobPath);
+                var path = await blobs.ExistsAsync(devPath) ? devPath : p.BlobPath;
+                return await blobs.CreateReadSasAsync(path, expiry);
+            }
+
             var items = blobs.Enabled
                 ? await Task.WhenAll(photos.Select(async p => new
                 {
@@ -98,7 +109,7 @@ public static class UploadEndpoints
                     p.Caption,
                     p.UploadedByGuestId,
                     uploadedBy = names.GetValueOrDefault(p.UploadedByGuestId),
-                    url = (string?)await blobs.CreateReadSasAsync(p.BlobPath, expiry),
+                    url = await ReadUrl(p),
                 }))
                 : photos.Select(p => new
                 {
