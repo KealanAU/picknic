@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { VyButton, VySwipeAction } from '@vyui/kit';
 import type { HostGuest } from '../../api/hostEvents';
 import { t } from '../../theme/tokens';
 

@@ -23,7 +23,8 @@ public static class InviteEndpoints
             if (ev is null) return Results.NotFound();
             if (ev.HostId != hostId) return Results.Forbid();
 
-            var joinUrl = links.JoinUrl(ev.Code, secrets.Unprotect(ev.JoinSecretEnc));
+            var joinSecret = secrets.UnprotectOrRotate(ev, out _);
+            var joinUrl = links.JoinUrl(ev.Code, joinSecret);
             var existing = await db.Invites.Where(i => i.EventId == id)
                 .Select(i => i.Email).ToListAsync();
 

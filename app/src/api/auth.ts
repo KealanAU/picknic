@@ -1,6 +1,6 @@
 // Host account auth against the API's Identity endpoints (MapIdentityApi at
 // /api/auth). Distinct from event guests, who use a separate JWT.
-import { request, setRefreshHandler, ApiError } from './http';
+import { request, setRefreshHandler, isApiError } from './http';
 import {
   clearTokens,
   getTokens,
@@ -53,7 +53,7 @@ export async function refreshTokens(): Promise<boolean> {
     await store(res);
     return true;
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) await clearTokens();
+    if (isApiError(e) && e.status === 401) await clearTokens();
     return false;
   }
 }

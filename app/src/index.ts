@@ -1,8 +1,10 @@
 import { createApp } from 'vue-lynx';
 import { installIntlPolyfill, registerIconSet } from '@vyui/core';
-import { VyUI } from '@vyui/kit';
+import { provideVyUI } from '@vyui/kit';
 import App from './App.vue';
 import { activeStorageName } from './api/storage';
+import vyuiConfig from './vyui.config';
+// Brand layer: Tailwind utilities, vyui tokens/animations, fonts, palette.
 import './style.css';
 
 console.log(`[picknic] storage backend: ${activeStorageName()}`);
@@ -18,6 +20,9 @@ registerIconSet('lucide', {
   icons: {
     camera: {
       body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></g>',
+    },
+    'chevron-left': {
+      body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 18-6-6 6-6"/>',
     },
     ticket: {
       body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2m0 4v2m0 4v2"/></g>',
@@ -41,5 +46,5 @@ registerIconSet('lucide', {
 });
 
 const app = createApp(App);
-app.use(VyUI, { ui: { primary: 'orange', gray: 'stone' } });
+provideVyUI(app, vyuiConfig);
 app.mount();

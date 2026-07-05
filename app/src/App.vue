@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import { VyButton, VyCard } from '@vyui/kit';
 import { useAuth } from './composables/useAuth';
 import { useGuest } from './composables/useGuest';
 import HostRoll from './components/host/HostRoll.vue';
@@ -16,10 +17,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <view :style="{ width: '100%', height: '100%', backgroundColor: t.color.cream }">
+  <view :style="{ width: '100%', minHeight: '100vh', height: '100%', backgroundColor: t.color.cream }">
     <view
       :style="{
         height: '100%',
+        minHeight: '100vh',
+        backgroundColor: t.color.cream,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

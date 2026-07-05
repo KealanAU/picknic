@@ -3,7 +3,7 @@
 import { computed, reactive } from 'vue';
 import * as auth from '../api/auth';
 import type { AccountInfo } from '../api/auth';
-import { ApiError } from '../api/http';
+import { isApiError } from '../api/http';
 
 type Status = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -14,13 +14,13 @@ const state = reactive({
 });
 
 function fail(e: unknown): never {
-  state.error = e instanceof ApiError ? e.message : 'Something went wrong';
+  state.error = isApiError(e) ? e.message : 'Something went wrong';
   state.status = state.user ? 'authenticated' : 'unauthenticated';
   throw e;
 }
 
 function accountAlreadyExists(e: unknown): boolean {
-  if (!(e instanceof ApiError) || e.status !== 400) return false;
+  if (!isApiError(e) || e.status !== 400) return false;
   const message = e.message.toLowerCase();
   return message.includes('already') || message.includes('taken');
 }

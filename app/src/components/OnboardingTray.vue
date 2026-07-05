@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue';
+import { VyTray } from '@vyui/kit';
 import { useAuth } from '../composables/useAuth';
 import { useGuest } from '../composables/useGuest';
 import ChooseView from './onboarding/ChooseView.vue';
@@ -43,7 +44,12 @@ function resolveGuestEvent(payload: ResolvedGuestEvent, setView: (id: string) =>
     :handle="false"
     default-view="choose"
     keyboard-aware
-    :ui="{ content: 'z-[1001]' }"
+    :ui="{
+      content: 'z-[1001] !bg-cream !border-cream',
+      morph: '!bg-cream',
+      viewport: '!bg-cream',
+      body: '!bg-cream',
+    }"
   >
     <template #default="nav">
       <ChooseView @guest="nav.setView('guest-code')" @host="nav.setView('host')" />

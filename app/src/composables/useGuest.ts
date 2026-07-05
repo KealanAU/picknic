@@ -3,7 +3,7 @@
 import { computed, reactive } from 'vue';
 import { getEvent, joinEvent, type PublicEvent } from '../api/events';
 import { clearGuest, guestValid, loadGuest, saveGuest, type GuestSession } from '../api/guest';
-import { ApiError } from '../api/http';
+import { isApiError } from '../api/http';
 
 type Status = 'idle' | 'loading' | 'joined' | 'none';
 
@@ -14,7 +14,7 @@ const state = reactive({
 });
 
 function friendly(e: unknown): string {
-  if (e instanceof ApiError) {
+  if (isApiError(e)) {
     if (e.status === 404) return "That event code doesn't exist.";
     if (e.status === 401) return 'That join link is invalid — ask the host for the QR.';
     if (e.status === 403) return 'Uploads are closed for this event.';

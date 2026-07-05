@@ -22,7 +22,7 @@ services:
   # photo upload/gallery flow works without an Azure account.
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:latest
-    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck --disableTelemetry
     ports:
       - "10000:10000"
     volumes:
@@ -45,6 +45,8 @@ services:
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
       Email__ConnectionString: ${EMAIL_CONNECTION_STRING:-}
       Email__FromAddress: ${EMAIL_FROM_ADDRESS:-}
+    volumes:
+      - dpkeys:/home/app/.aspnet/DataProtection-Keys
     depends_on:
       db:
         condition: service_healthy
@@ -60,3 +62,4 @@ services:
 volumes:
   pgdata:
   azurite:
+  dpkeys:

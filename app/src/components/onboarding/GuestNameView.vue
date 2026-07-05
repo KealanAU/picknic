@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { VyButton, VyForm, VyFormField, VyInput, VyTrayView } from '@vyui/kit';
 import { useGuest } from '../../composables/useGuest';
 import { backButtonStyle, errStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
 

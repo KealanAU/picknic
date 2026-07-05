@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { VyButton, VyForm, VyFormField, VyIcon, VyInput, VyTrayView } from '@vyui/kit';
 import { useAuth } from '../../composables/useAuth';
 import { backButtonStyle, errStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VyButton } from '@vyui/kit';
 import type { EventQr, HostEvent } from '../../api/hostEvents';
 import { t } from '../../theme/tokens';
 

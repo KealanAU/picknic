@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 import lynxPreset from '@lynx-js/tailwind-preset';
 import { createVyuiPreset } from '@vyui/kit/tailwind';
+import vyuiConfig from './src/vyui.config';
 
 // Brand palette as STATIC hex overriding vyui's primary/neutral scales, so
 // primary-500/neutral-200 utilities resolve without runtime CSS vars (which Lynx
@@ -49,7 +50,7 @@ const config: Config = {
     },
     'text-white',
   ],
-  presets: [lynxPreset, createVyuiPreset()],
+  presets: [lynxPreset, createVyuiPreset(vyuiConfig)],
   theme: {
     extend: {
       colors: {

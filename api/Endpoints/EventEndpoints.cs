@@ -92,7 +92,10 @@ public static class EventEndpoints
             if (ev is null) return Results.NotFound();
             if (ev.HostId != hostId) return Results.Forbid();
 
-            var joinUrl = links.JoinUrl(ev.Code, secrets.Unprotect(ev.JoinSecretEnc));
+            var joinSecret = secrets.UnprotectOrRotate(ev, out var rotated);
+            if (rotated) await db.SaveChangesAsync();
+
+            var joinUrl = links.JoinUrl(ev.Code, joinSecret);
 
             using var qr = new QRCodeGenerator();
             var data = qr.CreateQrCode(joinUrl, QRCodeGenerator.ECCLevel.Q);
@@ -124,7 +127,8 @@ public static class EventEndpoints
             if (ev is null) return Results.NotFound();
 
             if (!string.IsNullOrEmpty(req.JoinSecret)
-                && !SecretMatches(req.JoinSecret, secrets.Unprotect(ev.JoinSecretEnc)))
+                && (!secrets.TryUnprotect(ev.JoinSecretEnc, out var joinSecret)
+                    || !SecretMatches(req.JoinSecret, joinSecret)))
                 return Results.Unauthorized();
 
             var now = DateTimeOffset.UtcNow;

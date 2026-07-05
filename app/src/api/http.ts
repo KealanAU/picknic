@@ -12,6 +12,14 @@ export class ApiError extends Error {
   }
 }
 
+export function isApiError(e: unknown): e is ApiError {
+  return !!e
+    && typeof e === 'object'
+    && (e as { name?: unknown }).name === 'ApiError'
+    && typeof (e as { status?: unknown }).status === 'number'
+    && typeof (e as { message?: unknown }).message === 'string';
+}
+
 // Registered by auth.ts to break the http<->auth import cycle.
 let refreshHandler: (() => Promise<boolean>) | null = null;
 export function setRefreshHandler(fn: () => Promise<boolean>): void {
@@ -50,8 +58,8 @@ async function parse(res: Response): Promise<unknown> {
 function messageFor(status: number, payload: unknown): string {
   if (payload && typeof payload === 'object') {
     const p = payload as Record<string, unknown>;
-    if (typeof p.title === 'string') return p.title;
     if (typeof p.detail === 'string') return p.detail;
+    if (typeof p.title === 'string') return p.title;
     if (p.errors && typeof p.errors === 'object') {
       const first = Object.values(p.errors as Record<string, unknown>)[0];
       if (Array.isArray(first) && typeof first[0] === 'string') return first[0];

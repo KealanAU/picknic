@@ -17,8 +17,8 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
       '@vyui/kit':
-        specifier: ^0.1.2
-        version: 0.1.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
+        specifier: ^0.2.0
+        version: 0.2.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
       vue:
         specifier: ^3.5.0
         version: 3.5.39(typescript@5.9.3)
@@ -522,8 +522,8 @@ packages:
       '@lynx-js/types':
         optional: true
 
-  '@vyui/kit@0.1.2':
-    resolution: {integrity: sha512-rcVpkl9t2jufha7CzQjLHeqguqpsLxuYshZcCGDjjrNA4DIsiJ6+iAhPgJx9nfwB1SNf/p1qNPgIp4kHLgmKEg==}
+  '@vyui/kit@0.2.0':
+    resolution: {integrity: sha512-g+iYVnXUab9McVWgahbKD/NNf2YZSl10ditb9B5YxXXrnD4OItzV9mJW7Aq73gTnGmBmZS00QJwiWlLD4ynAyA==}
     peerDependencies:
       tailwindcss: ^3.4.0
       vue: '>= 3.4.0'
@@ -2863,7 +2863,7 @@ snapshots:
       vue-component-type-helpers: 3.3.6
       vue-lynx: 0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16))
 
-  '@vyui/kit@0.1.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))':
+  '@vyui/kit@0.2.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))':
     dependencies:
       '@vyui/core': 0.1.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=7306a3c760077dc4628d585e0f6eff7128e455981bf2cc98a6ee806d3c9ca4aa)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
       defu: 6.1.7

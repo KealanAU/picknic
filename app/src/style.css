@@ -5,6 +5,11 @@
 @tailwind base;
 @tailwind utilities;
 
+page,
+body {
+  background-color: #fff8f1 !important;
+}
+
 /* Resolve Comico from a host app first; the file fallback is inlined by Rspeedy
  * so Lynx Explorer doesn't fetch an unsupported webpack:/// font URL. */
 @font-face {
@@ -25,16 +30,40 @@
   font-feature-settings: 'clig', 'liga';
 }
 
-/* Pin vyui's shorthand vars (bg-primary/text-primary) to the brand; they
- * default to green/slate in @vyui/kit/style.css. */
+/* Pin vyui's semantic color vars to Picknic's brand scales. Components use
+ * `bg-primary-500` / `text-neutral-700`, which resolve through these vars. */
 :root {
-  --ui-primary: #006eff;
-  --ui-secondary: #004299;
+  --ui-color-primary-50: #e6f0ff;
+  --ui-color-primary-100: #cce0ff;
+  --ui-color-primary-200: #99c2ff;
+  --ui-color-primary-300: #66a3ff;
+  --ui-color-primary-400: #3385ff;
+  --ui-color-primary-500: #006eff;
+  --ui-color-primary-600: #0058cc;
+  --ui-color-primary-700: #004299;
+  --ui-color-primary-800: #002c66;
+  --ui-color-primary-900: #001633;
+  --ui-color-primary-950: #000b1a;
+
+  --ui-color-neutral-50: #fbfcfd;
+  --ui-color-neutral-100: #f4f6f9;
+  --ui-color-neutral-200: #e2e8f0;
+  --ui-color-neutral-300: #cbd3de;
+  --ui-color-neutral-400: #9aa4b2;
+  --ui-color-neutral-500: #6b7480;
+  --ui-color-neutral-600: #4b535d;
+  --ui-color-neutral-700: #343a42;
+  --ui-color-neutral-800: #1f242a;
+  --ui-color-neutral-900: #0d1013;
+  --ui-color-neutral-950: #060809;
+
+  --ui-primary: var(--ui-color-primary-500);
+  --ui-secondary: var(--ui-color-primary-700);
 }
 
 .dark {
-  --ui-primary: #006eff;
-  --ui-secondary: #3385ff;
+  --ui-primary: var(--ui-color-primary-400);
+  --ui-secondary: var(--ui-color-primary-300);
 }
 
 /* vue-lynx has no <Transition> component, so we replay a CSS keyframe on a

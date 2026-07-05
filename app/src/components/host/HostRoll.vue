@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { VyButton, VyCard } from '@vyui/kit';
 import type { AccountInfo } from '../../api/auth';
 import {
   createHostEvent,
@@ -12,7 +13,7 @@ import {
   type HostEvent,
   type HostGuest,
 } from '../../api/hostEvents';
-import { ApiError } from '../../api/http';
+import { isApiError } from '../../api/http';
 import { t } from '../../theme/tokens';
 import HostEventSettings from './HostEventSettings.vue';
 import HostGuestList from './HostGuestList.vue';
@@ -36,7 +37,7 @@ const copied = ref(false);
 const latestEvent = computed(() => hostEvents.value[0]);
 
 function messageFor(e: unknown): string {
-  return e instanceof ApiError ? e.message : 'Request failed';
+  return isApiError(e) ? e.message : 'Request failed';
 }
 
 function windowFromPartyDate(partyDate: string) {
@@ -63,12 +64,18 @@ async function loadPartyDetails() {
     return;
   }
   const eventId = latestEvent.value.id;
-  const [loadedGuests, loadedQr] = await Promise.all([
-    listGuests(eventId),
-    getEventQr(eventId),
-  ]);
+  const loadedGuests = await listGuests(eventId);
   guests.value = loadedGuests;
-  qr.value = loadedQr;
+  try {
+    qr.value = await getEventQr(eventId);
+  } catch (e) {
+    qr.value = null;
+    if (isApiError(e) && e.status === 409) {
+      error.value = e.message;
+      return;
+    }
+    throw e;
+  }
 }
 
 async function refreshAll() {
@@ -109,6 +116,7 @@ async function refreshShare() {
   try {
     qr.value = await getEventQr(latestEvent.value.id);
   } catch (e) {
+    if (isApiError(e) && e.status === 409) qr.value = null;
     error.value = messageFor(e);
   } finally {
     busy.value = false;

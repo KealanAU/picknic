@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VyButton, VyTrayView } from '@vyui/kit';
 import { subStyle, titleStyle } from './styles';
 
 defineEmits<{

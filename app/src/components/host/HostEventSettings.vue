@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { VyButton, VyForm, VyFormField, VyInput } from '@vyui/kit';
 import type { HostEvent } from '../../api/hostEvents';
 import { t } from '../../theme/tokens';
 
