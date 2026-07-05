@@ -1,9 +1,6 @@
 <script setup lang="ts">
-// The primary action: an outlined Voltage Blue pill. Transparent fill, 1.5px
-// blue border, blue grotesk label in uppercase — the outline IS the button.
-// 60px radius, flat (no shadow); press feedback is a subtle opacity dip only.
-// The `variant` prop is retained for API compatibility; both variants render
-// outlined per the Drive Capital system (filled buttons are disallowed).
+// Primary action: an outlined Voltage Blue pill. `variant` is inert — both render
+// outlined (filled buttons are disallowed in this system), kept for compat.
 import { computed, ref } from 'vue';
 import { t } from '../theme/tokens';
 

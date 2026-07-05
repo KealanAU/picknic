@@ -1,17 +1,13 @@
 <script setup lang="ts">
-// A native instant-print frame: renders a photo inside a Polaroid/Instax-style
-// paper card. Geometry mirrors the server-side PrintFramer so the in-app preview
-// matches the developed JPEG. Works with any image URL (the reveal SAS url, or a
-// data: URI from a fresh capture).
+// Renders a photo inside a Polaroid/Instax paper frame. Geometry mirrors the
+// server-side PrintFramer so the in-app preview matches the developed JPEG.
 import { computed } from 'vue';
 
 const props = withDefaults(
   defineProps<{
     src?: string;
     caption?: string;
-    /** Print style id: none | polaroid | instax_mini | instax_square | instax_wide */
     print?: string;
-    /** Card width in px. Borders scale from this. */
     width?: number;
   }>(),
   { print: 'polaroid', width: 300 },

@@ -3,19 +3,14 @@ import { installIntlPolyfill, registerIconSet } from '@vyui/core';
 import { VyUI } from '@vyui/kit';
 import App from './App.vue';
 import { activeStorageName } from './api/storage';
-// Brand layer: Tailwind utilities, vyui tokens/animations, fonts, palette.
 import './style.css';
 
-// In Explorer this logs "memory" (no persistence); web preview logs
-// "localStorage"; a real host with the module logs "native-kv"/"sqlite:kv".
 console.log(`[picknic] storage backend: ${activeStorageName()}`);
 
-// Lynx's PrimJS engine ships an incomplete `Intl`; install the shim before any
-// component constructs a date/number formatter.
+// Lynx's PrimJS ships an incomplete Intl; shim it before anything formats a date/number.
 installIntlPolyfill();
 
-// Iconify icon sets don't tree-shake, so register only the icons we use under
-// the `lucide` prefix instead of importing the whole vendor JSON.
+// Iconify sets don't tree-shake, so register only the icons we use.
 registerIconSet('lucide', {
   prefix: 'lucide',
   width: 24,

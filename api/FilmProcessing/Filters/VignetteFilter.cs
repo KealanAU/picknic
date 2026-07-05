@@ -1,12 +1,10 @@
 namespace Picknic.Api.FilmProcessing.Filters;
 
-/// <summary>
-/// Corner falloff — the darkened edges of a cheap lens / disposable camera.
-/// </summary>
+// Darkened corner falloff.
 public sealed class VignetteFilter : IImageFilter
 {
-    private readonly float _amount;   // 0 = none, ~0.4 = strong
-    private readonly float _feather;  // radius (fraction of half-diagonal) where falloff starts
+    private readonly float _amount;
+    private readonly float _feather;
 
     public VignetteFilter(float amount = 0.28f, float feather = 0.55f)
     {
@@ -28,7 +26,7 @@ public sealed class VignetteFilter : IImageFilter
             {
                 var dx = (x - cx) / maxDist;
                 var dy = (y - cy) / maxDist;
-                var dist = MathF.Sqrt(dx * dx + dy * dy); // 0 centre … 1 corner
+                var dist = MathF.Sqrt(dx * dx + dy * dy);
 
                 var t = (dist - _feather) / (1f - _feather);
                 t = t < 0f ? 0f : t > 1f ? 1f : t;

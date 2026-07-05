@@ -1,9 +1,5 @@
-// Persistent key/value storage with a pluggable backend.
-//
-// Priority: native KV (device) → SQLite (device, if that's the only module) →
-// localStorage (web preview) → memory (Explorer fallback, not persistent).
-// Swap explicitly with setStorageDriver() — e.g. force SQLite once your host
-// implements NativeSqliteModule.
+// Persistent key/value storage. Picks the first available backend:
+// native KV -> SQLite -> localStorage (web) -> memory (non-persistent fallback).
 import type { KeyValueStore, StorageDriver } from './types';
 import { memoryDriver, nativeKvDriver, sqliteKvDriver, webDriver } from './drivers';
 
@@ -29,13 +25,11 @@ function ensureReady(): Promise<void> {
   return ready;
 }
 
-/** Force a specific backend. Its init() re-runs on next use. */
 export function setStorageDriver(driver: StorageDriver): void {
   active = driver;
   ready = null;
 }
 
-/** Name of the backend in use — log it at startup to see the active fallback. */
 export function activeStorageName(): string {
   return active.name;
 }

@@ -16,9 +16,8 @@ type ResolvedGuestEvent = {
 const { status: authStatus, isAuthenticated } = useAuth();
 const { isJoined, isReady: guestReady } = useGuest();
 
-// --- Open state: stay up until host-authed or guest-joined --------------------
-// Latch `booted` once both singletons have finished their initial restore, so a
-// later login/join "loading" phase never momentarily collapses the tray.
+// Latch once both singletons finish their initial restore, so a later
+// login/join "loading" phase never momentarily collapses the tray.
 const booted = ref(false);
 watchEffect(() => {
   const authSettled = authStatus.value === 'authenticated' || authStatus.value === 'unauthenticated';

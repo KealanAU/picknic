@@ -1,51 +1,38 @@
-// Native camera boundary.
-//
-// Lynx has no built-in camera element or module — capture is a *custom* native
-// module the host app implements (see app/native/ios & app/native/android),
-// exactly like `NativeLocalStorageModule` in api/storage.ts. It is therefore
-// absent in Lynx Explorer and web preview, so callers must check
-// `isCameraAvailable()` and degrade (e.g. a "camera unavailable" state).
-//
-// This file is the *only* place that touches `NativeModules.CameraModule`.
-// Everything above it (composables, screens) works with the plain
-// `CapturedPhoto` shape and never sees the bridge.
+// Native camera boundary — the only place that touches NativeModules.CameraModule.
+// Lynx has no built-in camera; the host app implements this module (see
+// app/native/ios & app/native/android), so it's absent in Explorer/web preview.
+// Callers must check isCameraAvailable() and degrade.
 
 export interface CaptureOptions {
-  /** JPEG quality 0..1. Default 0.9. */
-  quality?: number;
-  /** Which camera to open. Default 'back'. */
+  quality?: number; // JPEG quality 0..1, default 0.9
   facing?: 'front' | 'back';
 }
 
 export interface CapturedPhoto {
-  /** Raw JPEG bytes of the capture. */
   bytes: ArrayBuffer;
   width: number;
   height: number;
   mime: string;
 }
 
-// The wire shape the native module returns through its callback. Kept internal —
-// callers never see base64.
 interface NativeCaptureResult {
   base64?: string;
   width?: number;
   height?: number;
   mime?: string;
-  /** Non-empty when capture failed or was cancelled. */
-  error?: string;
+  error?: string; // non-empty when capture failed or was cancelled
 }
 
 interface NativeCameraModule {
   capture(
     options: { quality: number; facing: string },
     callback: (result: NativeCaptureResult) => void,
-  ): unknown; // some hosts also return a Promise — we support both
+  ): unknown;
 }
 
 declare const NativeModules: Record<string, any> | undefined;
 
-function module(): NativeCameraModule | null {
+function cameraModule(): NativeCameraModule | null {
   try {
     return typeof NativeModules !== 'undefined'
       ? (NativeModules.CameraModule as NativeCameraModule) ?? null
@@ -56,11 +43,10 @@ function module(): NativeCameraModule | null {
 }
 
 export function isCameraAvailable(): boolean {
-  const mod = module();
+  const mod = cameraModule();
   return !!mod && typeof mod.capture === 'function';
 }
 
-/** User cancelled the camera (distinct from a real failure). */
 export class CameraCancelled extends Error {
   constructor() {
     super('Capture cancelled');
@@ -69,7 +55,7 @@ export class CameraCancelled extends Error {
 }
 
 export async function capturePhoto(options: CaptureOptions = {}): Promise<CapturedPhoto> {
-  const mod = module();
+  const mod = cameraModule();
   if (!mod || typeof mod.capture !== 'function') {
     throw new Error('Camera is not available in this runtime.');
   }
@@ -81,10 +67,10 @@ export async function capturePhoto(options: CaptureOptions = {}): Promise<Captur
 
   const result = await new Promise<NativeCaptureResult>((resolve, reject) => {
     try {
-      const maybe = mod.capture(args, (r) => resolve(r ?? {}));
-      // Host may resolve through a returned Promise instead of the callback.
-      if (maybe && typeof (maybe as any).then === 'function') {
-        (maybe as Promise<NativeCaptureResult>).then((r) => resolve(r ?? {}), reject);
+      // Host may resolve via the callback or a returned Promise; support both.
+      const captureReturn = mod.capture(args, (r) => resolve(r ?? {}));
+      if (captureReturn && typeof (captureReturn as any).then === 'function') {
+        (captureReturn as Promise<NativeCaptureResult>).then((r) => resolve(r ?? {}), reject);
       }
     } catch (e) {
       reject(e);
@@ -105,7 +91,6 @@ export async function capturePhoto(options: CaptureOptions = {}): Promise<Captur
   };
 }
 
-/** A `data:` URI for a captured photo, for previewing in an <image>. */
 export function toDataUri(photo: CapturedPhoto): string {
   return `data:${photo.mime};base64,${arrayBufferToBase64(photo.bytes)}`;
 }
@@ -129,7 +114,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return out;
 }
 
-// Lynx's runtime doesn't guarantee `atob`, so decode base64 ourselves.
+// Lynx's runtime doesn't guarantee atob/btoa, so code base64 ourselves.
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 function base64ToArrayBuffer(b64: string): ArrayBuffer {
   const clean = b64.replace(/[^A-Za-z0-9+/]/g, '');

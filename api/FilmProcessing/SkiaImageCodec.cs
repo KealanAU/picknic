@@ -2,14 +2,9 @@ using SkiaSharp;
 
 namespace Picknic.Api.FilmProcessing;
 
-/// <summary>
-/// SkiaSharp-backed <see cref="IImageCodec"/> — decode/encode only; it never
-/// touches the film look. SkiaSharp is MIT-licensed (free for commercial use)
-/// and actively patched, which is why we use it over ImageSharp's 2.x line
-/// (unpatched advisories) or 3.x line (commercial licence). Linux containers get
-/// the native binaries from the <c>SkiaSharp.NativeAssets.Linux.NoDependencies</c>
-/// package referenced in the csproj.
-/// </summary>
+// SkiaSharp-backed codec: decode/encode only. Chosen over ImageSharp because it's
+// MIT-licensed (free commercially) and actively patched; Linux natives come from
+// the SkiaSharp.NativeAssets.Linux.NoDependencies package in the csproj.
 public sealed class SkiaImageCodec : IImageCodec
 {
     public PixelBuffer Decode(Stream source)
@@ -21,15 +16,14 @@ public sealed class SkiaImageCodec : IImageCodec
         using var decoded = SKBitmap.Decode(codec)
             ?? throw new InvalidDataException("Could not decode image.");
 
-        // Camera photos carry EXIF orientation; bake it in so the developed JPEG
-        // is upright without relying on the viewer honouring EXIF.
+        // Bake in EXIF orientation so the developed JPEG is upright regardless of viewer.
         using var upright = Orient(decoded, codec.EncodedOrigin);
 
         var w = upright.Width;
         var h = upright.Height;
         var buffer = new PixelBuffer(w, h);
         var dst = buffer.Data;
-        var src = upright.GetPixelSpan(); // RGBA8888, tightly packed
+        var src = upright.GetPixelSpan();
 
         for (var i = 0; i < w * h; i++)
         {
@@ -55,7 +49,7 @@ public sealed class SkiaImageCodec : IImageCodec
             bytes[s] = ToByte(srcData[s]);
             bytes[s + 1] = ToByte(srcData[s + 1]);
             bytes[s + 2] = ToByte(srcData[s + 2]);
-            bytes[s + 3] = 255; // JPEG is opaque
+            bytes[s + 3] = 255;
         }
 
         var info = new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Opaque);
@@ -66,8 +60,6 @@ public sealed class SkiaImageCodec : IImageCodec
 
     private static byte ToByte(float v) => (byte)(PixelBuffer.Clamp01(v) * 255f + 0.5f);
 
-    // Returns an upright RGBA8888 copy for the given EXIF origin. The four
-    // transpose/rotate origins swap width and height.
     private static SKBitmap Orient(SKBitmap src, SKEncodedOrigin origin)
     {
         if (origin is SKEncodedOrigin.TopLeft or SKEncodedOrigin.Default)
@@ -81,7 +73,6 @@ public sealed class SkiaImageCodec : IImageCodec
         var dst = new SKBitmap(new SKImageInfo(
             swap ? h : w, swap ? w : h, SKColorType.Rgba8888, SKAlphaType.Unpremul));
 
-        // Affine map from source pixel coords to the upright destination.
         var m = origin switch
         {
             SKEncodedOrigin.TopRight => Matrix(-1, 0, w, 0, 1, 0),      // mirror X
@@ -101,7 +92,6 @@ public sealed class SkiaImageCodec : IImageCodec
         return dst;
     }
 
-    // X' = sx·x + kx·y + tx ; Y' = ky·x + sy·y + ty
     private static SKMatrix Matrix(float sx, float kx, float tx, float ky, float sy, float ty) =>
         new()
         {

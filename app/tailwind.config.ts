@@ -2,13 +2,9 @@ import type { Config } from 'tailwindcss';
 import lynxPreset from '@lynx-js/tailwind-preset';
 import { createVyuiPreset } from '@vyui/kit/tailwind';
 
-// ── Picknic brand palette (Drive Capital "Summer Drive") ───────────────────
-// Monochrome Voltage Blue on a warm cream canvas, with Ash hairline grays. These
-// override vyui's semantic `primary` / `neutral` scales with STATIC hex, so the
-// generated `primary-500` / `neutral-200` utilities the kit themes reference
-// resolve to brand colors without relying on runtime CSS vars (which Lynx
-// native treats inconsistently). See src/theme/tokens.ts for the inline-style
-// mirror of these values. #006eff is primary-500; #e2e8f0 (Ash) is neutral-200.
+// Brand palette as STATIC hex overriding vyui's primary/neutral scales, so
+// primary-500/neutral-200 utilities resolve without runtime CSS vars (which Lynx
+// native treats inconsistently). Mirrored for inline styles in src/theme/tokens.ts.
 const voltage = {
   50: '#e6f0ff',
   100: '#cce0ff',
@@ -23,7 +19,6 @@ const voltage = {
   950: '#000b1a',
 };
 
-// Neutral ash grays — 200 is the canonical hairline (#e2e8f0).
 const ash = {
   50: '#fbfcfd',
   100: '#f4f6f9',
@@ -41,18 +36,12 @@ const ash = {
 const config: Config = {
   content: [
     './src/**/*.{vue,js,ts}',
-    // Kit component themes carry their class strings in dist — scan them so the
-    // utilities they use actually get generated.
+    // Kit themes carry their class strings in dist; scan them so those utilities generate.
     './node_modules/@vyui/kit/dist/**/*.js',
   ],
-  // createVyuiPreset() ships a safelist for the kit's runtime-built color
-  // classes (`bg-${c}-500`, …) which Tailwind's static scan can't see. Its
-  // default covers all 6 semantic scales × 11 shades × ~27 state variants,
-  // which balloons the Lynx bundle to ~6.7 MB. A top-level `safelist` REPLACES
-  // the preset's (Tailwind resolves safelist first-defined-wins, not merge), so
-  // we scope it to what this app renders: primary + neutral, the shades the kit
-  // themes emit, and the handful of state variants we actually use — press is
-  // `data-[state=active]` (vyui core drives it via a data attr, not CSS :active).
+  // This top-level safelist REPLACES the vyui preset's (Tailwind is first-wins, not
+  // merge). The preset's default covers all scales × shades × variants and balloons
+  // the Lynx bundle to ~6.7 MB, so we scope it to just what this app renders.
   safelist: [
     {
       pattern: /(bg|text|ring|border)-(primary|neutral)-(50|100|200|300|400|500|600|700|900)/,
@@ -66,7 +55,6 @@ const config: Config = {
       colors: {
         primary: voltage,
         neutral: ash,
-        // Named tokens for hand-crafted components (bg-cream, text-ink, …).
         cream: '#fff8f1',
         paper: '#fff8f1',
         ink: '#000000',

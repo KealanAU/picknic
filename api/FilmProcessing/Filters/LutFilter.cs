@@ -3,14 +3,8 @@ using System.Numerics;
 
 namespace Picknic.Api.FilmProcessing.Filters;
 
-/// <summary>
-/// Applies a 3D colour LUT (Adobe/Resolve <c>.cube</c>) with trilinear
-/// interpolation — the industry-standard way to emulate a specific film stock.
-///
-/// Drop <c>portra400.cube</c>, <c>cinestill800t.cube</c>, etc. into
-/// <c>FilmProcessing/Luts/</c> and point a <see cref="FilmStock"/> at it. This
-/// filter is optional: stocks without a LUT fall back to <see cref="ColorGradeFilter"/>.
-/// </summary>
+// Applies a 3D colour LUT (.cube) with trilinear interpolation. Stocks without a
+// LUT fall back to ColorGradeFilter.
 public sealed class LutFilter : IImageFilter
 {
     private readonly int _size;
@@ -45,7 +39,6 @@ public sealed class LutFilter : IImageFilter
         int r1 = Math.Min(r0 + 1, max), g1 = Math.Min(g0 + 1, max), b1 = Math.Min(b0 + 1, max);
         float dr = fr - r0, dg = fg - g0, db = fb - b0;
 
-        // Trilinear blend of the 8 surrounding lattice points.
         Vector3 c000 = At(r0, g0, b0), c100 = At(r1, g0, b0);
         Vector3 c010 = At(r0, g1, b0), c110 = At(r1, g1, b0);
         Vector3 c001 = At(r0, g0, b1), c101 = At(r1, g0, b1);
@@ -62,7 +55,6 @@ public sealed class LutFilter : IImageFilter
 
     private Vector3 At(int r, int g, int b) => _table[r + g * _size + b * _size * _size];
 
-    /// <summary>Parses a <c>.cube</c> file. Supports 3D LUTs (LUT_3D_SIZE).</summary>
     public static LutFilter Load(string path)
     {
         using var reader = new StreamReader(path);
@@ -87,7 +79,6 @@ public sealed class LutFilter : IImageFilter
                 table = new Vector3[size * size * size];
                 continue;
             }
-            // Skip metadata / 1D directives we don't model.
             if (char.IsLetter(line[0])) continue;
 
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);

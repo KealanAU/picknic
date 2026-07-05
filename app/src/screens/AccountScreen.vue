@@ -17,11 +17,10 @@ const emailInput = computed({
   },
 });
 
-// Direction of the last mode swap, so the headline slides in from the side that
-// matches the toggle: forward (→ register) enters from the right, back (→ login)
-// from the left. Drives which keyframe class the keyed header replays.
-const dir = ref<'fwd' | 'back'>('fwd');
-const headerAnim = computed(() => (dir.value === 'fwd' ? 'pk-swap-right' : 'pk-swap-left'));
+// Last mode-swap direction, so the keyed header replays a keyframe that slides
+// in from the matching side (forward → from right, back → from left).
+const swapDirection = ref<'fwd' | 'back'>('fwd');
+const headerAnim = computed(() => (swapDirection.value === 'fwd' ? 'pk-swap-right' : 'pk-swap-left'));
 
 const title = computed(() => (mode.value === 'login' ? 'Welcome back' : 'Create your account'));
 const cta = computed(() => (mode.value === 'login' ? 'Log in' : 'Sign up'));
@@ -29,7 +28,7 @@ const canSubmit = computed(() => !!email.value && password.value.length >= 6 && 
 
 function toggle() {
   const next = mode.value === 'login' ? 'register' : 'login';
-  dir.value = next === 'register' ? 'fwd' : 'back';
+  swapDirection.value = next === 'register' ? 'fwd' : 'back';
   mode.value = next;
 }
 
@@ -39,15 +38,14 @@ async function submit() {
     if (mode.value === 'login') await login(email.value, password.value);
     else await register(email.value, password.value);
   } catch {
-    // error is surfaced reactively via useAuth().error
+    // error surfaced reactively via useAuth().error
   }
 }
 </script>
 
 <template>
   <view :style="{ width: '100%' }">
-    <!-- Flat on the cream canvas — no card chrome (bg/border/rounding) so the
-         auth form reads as part of the page, not a separated surface. -->
+    <!-- Intentionally no card chrome: the form reads as part of the cream page. -->
     <view :style="{ width: '100%' }">
       <view :key="mode" :class="headerAnim" :style="{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '20px' }">
         <text :style="{ fontFamily: t.font.display, fontSize: '38px', fontWeight: '400', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">{{ title }}</text>

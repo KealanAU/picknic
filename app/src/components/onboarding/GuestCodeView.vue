@@ -11,8 +11,7 @@ const emit = defineEmits<{
 const { lookup, error: guestError } = useGuest();
 
 const code = ref('');
-// Populated only when the app is opened from a scanned QR deep link (future);
-// a typed room code carries no secret.
+// Set only from a scanned QR deep link (future); a typed room code has no secret.
 const secret = ref<string | undefined>();
 const codeBusy = ref(false);
 

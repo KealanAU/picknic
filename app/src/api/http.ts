@@ -1,6 +1,3 @@
-// Thin fetch wrapper for the Picknic API: JSON in/out, bearer-token injection,
-// and a single transparent token refresh on 401. Endpoint modules (auth.ts,
-// events.ts, …) build on this rather than calling fetch directly.
 import { apiUrl } from './config';
 import { getTokens, isExpired } from './tokens';
 
@@ -8,7 +5,6 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
-    /** ASP.NET ProblemDetails / IdentityResult errors, when present. */
     readonly problem?: unknown,
   ) {
     super(message);
@@ -16,8 +12,7 @@ export class ApiError extends Error {
   }
 }
 
-// Registered by auth.ts to break the http↔auth import cycle. Returns true if a
-// fresh access token is now available.
+// Registered by auth.ts to break the http<->auth import cycle.
 let refreshHandler: (() => Promise<boolean>) | null = null;
 export function setRefreshHandler(fn: () => Promise<boolean>): void {
   refreshHandler = fn;
@@ -26,9 +21,7 @@ export function setRefreshHandler(fn: () => Promise<boolean>): void {
 export interface RequestOptions {
   method?: string;
   body?: unknown;
-  /** Send the stored host bearer token. Default true. */
   auth?: boolean;
-  /** Override the Authorization token (e.g. a guest JWT). */
   token?: string;
   query?: Record<string, string | number | boolean | undefined>;
   headers?: Record<string, string>;
@@ -74,7 +67,6 @@ export async function request<T = unknown>(
 ): Promise<T> {
   const useAuth = opts.auth !== false && !opts.token;
 
-  // Refresh proactively so we don't waste a round-trip on a known-stale token.
   if (useAuth && getTokens() && isExpired() && refreshHandler) {
     await refreshHandler();
   }
@@ -95,7 +87,7 @@ export async function request<T = unknown>(
 
   let res = await send();
 
-  // Reactive refresh: token rejected mid-flight — refresh once and retry.
+  // Token rejected mid-flight: refresh once and retry.
   if (res.status === 401 && useAuth && refreshHandler && getTokens()) {
     if (await refreshHandler()) res = await send();
   }

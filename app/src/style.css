@@ -1,33 +1,21 @@
-/*
- * Picknic global style entry. Imported once from src/index.ts.
- *
- *   1. vyui token + animation layer (@vyui/kit/style.css)
- *   2. Tailwind base + utilities (generated from tailwind.config.ts)
- *   3. Brand fonts (Editorial New display serif + Founders Grotesk grotesk)
- *   4. vyui shorthand-token overrides so `bg-primary` matches the Voltage scale
- *
- * The palette itself lives in tailwind.config.ts (static hex) and is mirrored
- * for inline styles in src/theme/tokens.ts.
- *
- * Aesthetic: Drive Capital "Summer Drive" — cream canvas, single Voltage Blue
- * accent, flat surfaces separated only by Ash hairlines, tight -0.02em tracking.
- */
+/* Global style entry, imported once from src/index.ts. Palette lives in
+ * tailwind.config.ts and is mirrored for inline styles in src/theme/tokens.ts. */
 @import '@vyui/kit/style.css';
 
 @tailwind base;
 @tailwind utilities;
 
-/*
- * Comico is loaded through the host app when it is available. Use Lynx's
- * local() font source so native can resolve a registered/bundled font without
- * Rspeedy rewriting a file URL to the unsupported `webpack:///` scheme.
- */
+/* Resolve Comico from a host app first; the file fallback is inlined by Rspeedy
+ * so Lynx Explorer doesn't fetch an unsupported webpack:/// font URL. */
 @font-face {
   font-family: 'Comico';
-  src: local('Comico'), local('Comico Regular'), local('Comico-Regular');
+  src:
+    local('Comico'),
+    local('Comico Regular'),
+    local('Comico-Regular'),
+    url('./assets/fonts/Comico-Regular.ttf') format('truetype');
 }
 
-/* Voltage Blue accent — tracked tight, monochrome on cream. */
 :root {
   --color-cream: #fff8f1;
   --color-ash: #e2e8f0;
@@ -37,29 +25,20 @@
   font-feature-settings: 'clig', 'liga';
 }
 
-/*
- * vyui's shorthand utilities (`bg-primary`, `text-primary`) read the mode-tier
- * `--ui-*` vars, which default to green/slate in @vyui/kit/style.css. The scale
- * utilities (`primary-500`) come from our static Tailwind palette; pin the
- * shorthand vars to match so both agree on the brand.
- */
+/* Pin vyui's shorthand vars (bg-primary/text-primary) to the brand; they
+ * default to green/slate in @vyui/kit/style.css. */
 :root {
-  --ui-primary: #006eff;   /* voltage-500 */
-  --ui-secondary: #004299; /* voltage-700 */
+  --ui-primary: #006eff;
+  --ui-secondary: #004299;
 }
 
 .dark {
   --ui-primary: #006eff;
-  --ui-secondary: #3385ff; /* voltage-400 */
+  --ui-secondary: #3385ff;
 }
 
-/*
- * Section swap micro-transitions. vue-lynx's renderer has no <Transition>
- * component (that lives in @vue/runtime-dom), so instead of enter/leave hooks
- * we replay a CSS keyframe: give the node a :key that changes on swap and Vue
- * remounts it, running the animation fresh. Lynx supports @keyframes + the
- * `animation` shorthand natively, so this works on device, not just web.
- */
+/* vue-lynx has no <Transition> component, so we replay a CSS keyframe on a
+ * changing :key instead. Lynx supports @keyframes natively, so this runs on device. */
 @keyframes pk-swap-from-right {
   from { opacity: 0; transform: translateX(16px); }
   to   { opacity: 1; transform: translateX(0); }

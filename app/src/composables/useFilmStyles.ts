@@ -1,6 +1,5 @@
-// Loads the film-stock and instant-print catalogues from the API and holds the
-// current selection. Pure selection state — a screen decides what to do with it
-// (preview, or pass {stock, print} to developPhoto).
+// Loads the film-stock and instant-print catalogues and holds the current
+// selection; a screen decides what to do with {stock, print}.
 import { onMounted, readonly, ref } from 'vue';
 import {
   listFilmStocks,
@@ -21,12 +20,13 @@ export function useFilmStyles(defaultStock = 'portra400', defaultPrint = 'none')
     loading.value = true;
     error.value = null;
     try {
-      const [s, p] = await Promise.all([listFilmStocks(), listPrintStyles()]);
-      stocks.value = s;
-      prints.value = p;
-      // Fall back to the first available option if our default isn't offered.
-      if (s.length && !s.some((x) => x.id === stock.value)) stock.value = s[0].id;
-      if (p.length && !p.some((x) => x.id === print.value)) print.value = p[0].id;
+      const [loadedStocks, loadedPrints] = await Promise.all([listFilmStocks(), listPrintStyles()]);
+      stocks.value = loadedStocks;
+      prints.value = loadedPrints;
+      const stockOffered = loadedStocks.some((option) => option.id === stock.value);
+      const printOffered = loadedPrints.some((option) => option.id === print.value);
+      if (loadedStocks.length && !stockOffered) stock.value = loadedStocks[0].id;
+      if (loadedPrints.length && !printOffered) print.value = loadedPrints[0].id;
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     } finally {

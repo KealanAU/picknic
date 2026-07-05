@@ -1,5 +1,5 @@
 // Capture concern only: wraps the native camera boundary in reactive state.
-// Deliberately knows nothing about uploading — compose it with usePhotoUpload.
+// Compose with usePhotoUpload.
 import { readonly, ref } from 'vue';
 import {
   capturePhoto,
@@ -15,7 +15,6 @@ export function useCamera() {
   const error = ref<string | null>(null);
   const lastPhoto = ref<CapturedPhoto | null>(null);
 
-  /** Opens the camera. Returns the photo, or null if unavailable/cancelled. */
   async function capture(options?: CaptureOptions): Promise<CapturedPhoto | null> {
     if (!available) {
       error.value = 'Camera is not available on this device.';
@@ -28,7 +27,7 @@ export function useCamera() {
       lastPhoto.value = photo;
       return photo;
     } catch (e) {
-      if (e instanceof CameraCancelled) return null; // not an error — user backed out
+      if (e instanceof CameraCancelled) return null; // user backed out, not an error
       error.value = e instanceof Error ? e.message : String(e);
       return null;
     } finally {

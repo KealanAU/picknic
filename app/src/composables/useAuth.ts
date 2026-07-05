@@ -1,6 +1,5 @@
-// Reactive wrapper over api/auth.ts. A module-level singleton so every screen
-// shares one auth state. Components read `user`/`status`/`isAuthenticated` and
-// call the actions; the raw functions in api/auth.ts stay usable on their own.
+// Reactive wrapper over api/auth.ts, a module-level singleton so every screen
+// shares one auth state.
 import { computed, reactive } from 'vue';
 import * as auth from '../api/auth';
 import type { AccountInfo } from '../api/auth';
@@ -39,7 +38,6 @@ export function useAuth() {
     isAuthenticated: computed(() => state.status === 'authenticated'),
     isBusy: computed(() => state.status === 'loading'),
 
-    /** Restore a persisted session on app start. */
     async initialize(): Promise<void> {
       state.status = 'loading';
       try {

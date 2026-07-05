@@ -1,17 +1,12 @@
 <script setup lang="ts">
-// A flat cream panel: square corners, an Ash hairline edge, no shadow and no
-// tilt — separation comes from the border and whitespace alone. The base
-// surface of the Drive Capital "Summer Drive" look. The `tilt` / `tape` props
-// are retained for API compatibility but are intentionally inert: the editorial
-// system is strictly flat and un-decorated.
+// Flat cream panel with an Ash hairline edge. tilt/tape are inert, kept only so
+// existing call sites still type-check.
 import { computed } from 'vue';
 import { t } from '../theme/tokens';
 
 const props = withDefaults(
   defineProps<{
-    /** Retained for API compatibility; no-op in the flat editorial system. */
     tilt?: number;
-    /** Retained for API compatibility; no-op in the flat editorial system. */
     tape?: boolean;
     padding?: number;
   }>(),

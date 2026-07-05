@@ -2,20 +2,14 @@ using System.Numerics;
 
 namespace Picknic.Api.FilmProcessing.Filters;
 
-/// <summary>
-/// Halation: the red-orange glow that bleeds around bright areas on film (the
-/// Cinestill signature). We isolate the highlights, blur them, tint the glow,
-/// and screen-blend it back over the image.
-///
-/// The blur is a self-contained separable box blur so this filter — like the
-/// rest of the look — carries no image-library dependency.
-/// </summary>
+// The red-orange glow that bleeds around highlights on film (the CineStill look):
+// isolate highlights, blur, tint, and screen-blend back over the image.
 public sealed class HalationFilter : IImageFilter
 {
-    private readonly float _threshold;   // luma above which pixels glow
-    private readonly float _intensity;   // strength of the added glow
-    private readonly int _radius;        // blur radius in pixels (spread of the glow)
-    private readonly Vector3 _tint;      // glow colour (warm red-orange)
+    private readonly float _threshold;
+    private readonly float _intensity;
+    private readonly int _radius;
+    private readonly Vector3 _tint;
 
     public HalationFilter(
         float threshold = 0.72f,
@@ -34,7 +28,6 @@ public sealed class HalationFilter : IImageFilter
         if (_intensity <= 0f) return;
         var n = buffer.PixelCount;
 
-        // 1. Highlight mask, tinted: how much each pixel contributes to the glow.
         var glow = new float[n * 3];
         var d = buffer.Data;
         for (int i = 0, p = 0; i < d.Length; i += 4, p += 3)
@@ -46,10 +39,8 @@ public sealed class HalationFilter : IImageFilter
             glow[p + 2] = m * _tint.Z;
         }
 
-        // 2. Spread it.
         BoxBlur(glow, buffer.Width, buffer.Height, _radius);
 
-        // 3. Screen-blend the glow back: result = 1 - (1-base)(1-glow).
         for (int i = 0, p = 0; i < d.Length; i += 4, p += 3)
         {
             d[i] = Screen(d[i], glow[p] * _intensity);
@@ -64,8 +55,7 @@ public sealed class HalationFilter : IImageFilter
         return PixelBuffer.Clamp01(1f - (1f - a) * (1f - b));
     }
 
-    // Separable box blur over an interleaved RGB float buffer, two passes to
-    // approximate a Gaussian. Operates in place via a scratch copy per axis.
+    // Separable box blur over interleaved RGB, two passes to approximate a Gaussian.
     private static void BoxBlur(float[] rgb, int w, int h, int radius)
     {
         for (var pass = 0; pass < 2; pass++)

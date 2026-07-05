@@ -1,12 +1,9 @@
 <script setup lang="ts">
-// A hairline section rule with an optional uppercase label — the editorial
-// "Metadata Label" pattern. Replaces the earlier hand-drawn wobble with an Ash
-// (#e2e8f0) rule and a Voltage Blue grotesk label, per the flat Drive Capital
-// system. Name kept for API compatibility with existing call sites.
+// Hairline section rule with an optional uppercase label. Name kept for compat.
 import { t } from '../theme/tokens';
 
 withDefaults(defineProps<{ label?: string; color?: string }>(), {
-  color: '#e2e8f0' /* Ash */,
+  color: '#e2e8f0',
 });
 </script>
 

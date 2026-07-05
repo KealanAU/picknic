@@ -24,10 +24,9 @@ async function submitJoin() {
   if (!canJoin.value) return;
   joinBusy.value = true;
   try {
-    await join(props.code, guestName.value, props.secret);
-    // Success flips isJoined, which closes the tray.
+    await join(props.code, guestName.value, props.secret); // success flips isJoined, closing the tray
   } catch {
-    // guestError set by join
+    // error surfaced via guestError
   } finally {
     joinBusy.value = false;
   }

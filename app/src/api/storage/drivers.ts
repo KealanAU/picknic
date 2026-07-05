@@ -1,5 +1,3 @@
-// Concrete storage backends. Each reports isAvailable(); the facade in index.ts
-// picks the first that works.
 import type { StorageDriver } from './types';
 import {
   nativeModule,
@@ -8,7 +6,7 @@ import {
   type SqliteResult,
 } from './native';
 
-/** Last-resort backend. Not persistent — lost on reload (e.g. Lynx Explorer). */
+// Not persistent — lost on reload (e.g. Lynx Explorer).
 export function memoryDriver(): StorageDriver {
   const mem = new Map<string, string>();
   return {
@@ -24,7 +22,6 @@ export function memoryDriver(): StorageDriver {
   };
 }
 
-/** Web preview / web container backend. */
 export function webDriver(): StorageDriver {
   let ok = false;
   try {
@@ -41,11 +38,8 @@ export function webDriver(): StorageDriver {
   };
 }
 
-/**
- * Native key/value backend. Adapts either our NativeKVModule (getItem/…) or
- * Lynx's tutorial NativeLocalStorageModule (getStorageItem/…), and tolerates
- * hosts whose getter returns synchronously instead of via callback.
- */
+// Adapts our NativeKVModule or Lynx's NativeLocalStorageModule, and tolerates
+// hosts whose getter returns synchronously instead of via callback.
 export function nativeKvDriver(): StorageDriver {
   const mod: any =
     nativeModule<NativeKVModule>('NativeKVModule') ??
@@ -60,8 +54,9 @@ export function nativeKvDriver(): StorageDriver {
     getItem: (key) =>
       new Promise((resolve) => {
         try {
-          const maybe = get.call(mod, key, (v: string | null) => resolve(v ?? null));
-          if (typeof maybe === 'string' || maybe === null) resolve(maybe ?? null);
+          // Some hosts return the value synchronously; others resolve via the callback.
+          const syncResult = get.call(mod, key, (v: string | null) => resolve(v ?? null));
+          if (typeof syncResult === 'string' || syncResult === null) resolve(syncResult ?? null);
         } catch {
           resolve(null);
         }
@@ -76,7 +71,6 @@ export function nativeKvDriver(): StorageDriver {
   };
 }
 
-/** SQLite-backed key/value store — a single `kv` table over NativeSqliteModule. */
 export function sqliteKvDriver(table = 'kv'): StorageDriver {
   const mod = nativeModule<NativeSqliteModule>('NativeSqliteModule');
 

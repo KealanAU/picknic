@@ -1,13 +1,7 @@
 <script setup lang="ts">
-// The film lab: pick a film stock + instant-print frame, and preview it live in
-// the app. Ties together useFilmStyles (catalogue + selection), useCamera
-// (capture), and the InstaxCard frame. The developed film look itself is applied
-// server-side at reveal — here we preview the frame around the raw capture.
-//
-// Reference screen for the Drive Capital "Summer Drive" look: brand tokens (no
-// hardcoded hex), serif display headlines against a grotesk body, and the flat
-// PaperCard / outlined StickerButton / hairline DoodleDivider signature
-// components. Copy this pattern to the other screens.
+// Pick a film stock + instant-print frame and preview it live. The developed
+// film look is applied server-side at reveal; here we only preview the frame
+// around the raw capture. Also the reference screen for the brand token style.
 import { computed, ref } from 'vue';
 import { useFilmStyles } from '../composables/useFilmStyles';
 import { useCamera } from '../composables/useCamera';
@@ -24,7 +18,7 @@ const { available, busy, error: cameraError, capture } = useCamera();
 const previewUri = ref<string | undefined>(undefined);
 
 const stockName = computed(
-  () => stocks.value.find((s) => s.id === stock.value)?.displayName ?? 'Film',
+  () => stocks.value.find((option) => option.id === stock.value)?.displayName ?? 'Film',
 );
 
 async function takePhoto() {
@@ -73,7 +67,6 @@ const labelStyle = {
         Choose your roll
       </text>
 
-      <!-- Live print preview -->
       <PaperCard :padding="14">
         <InstaxCard :src="previewUri" :caption="stockName" :print="print" :width="260" />
       </PaperCard>
@@ -87,24 +80,22 @@ const labelStyle = {
 
       <DoodleDivider label="the frame" />
 
-      <!-- Print style -->
       <view :style="{ width: '100%', gap: '10px' }">
         <text :style="labelStyle">Print frame</text>
         <view :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px' }">
           <view
-            v-for="p in prints"
-            :key="p.id"
-            :style="chipStyle(p.id === print)"
-            @tap="print = p.id"
+            v-for="printOption in prints"
+            :key="printOption.id"
+            :style="chipStyle(printOption.id === print)"
+            @tap="print = printOption.id"
           >
-            <text :style="chipTextStyle(p.id === print)">{{ p.displayName }}</text>
+            <text :style="chipTextStyle(printOption.id === print)">{{ printOption.displayName }}</text>
           </view>
         </view>
       </view>
 
       <DoodleDivider label="the stock" />
 
-      <!-- Film stock -->
       <view :style="{ width: '100%', gap: '10px' }">
         <text :style="labelStyle">Film stock</text>
         <text v-if="loading" :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }">
@@ -115,12 +106,12 @@ const labelStyle = {
         </text>
         <view :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px' }">
           <view
-            v-for="s in stocks"
-            :key="s.id"
-            :style="chipStyle(s.id === stock)"
-            @tap="stock = s.id"
+            v-for="stockOption in stocks"
+            :key="stockOption.id"
+            :style="chipStyle(stockOption.id === stock)"
+            @tap="stock = stockOption.id"
           >
-            <text :style="chipTextStyle(s.id === stock)">{{ s.displayName }}</text>
+            <text :style="chipTextStyle(stockOption.id === stock)">{{ stockOption.displayName }}</text>
           </view>
         </view>
       </view>

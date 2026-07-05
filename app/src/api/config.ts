@@ -1,20 +1,9 @@
-// Base URL of the Picknic .NET API, resolved per environment.
-//
-// Resolution order (highest first):
-//   1. setApiBase(...)                — runtime override (e.g. LAN IP on device)
-//   2. import.meta.env.PUBLIC_API_BASE — build-time override, if set
-//   3. dev/prod defaults below, chosen by rspeedy's build mode
-//
-// Rsbuild only inlines env vars prefixed PUBLIC_. Set it per build, e.g.:
-//   PUBLIC_API_BASE=https://api.picknic.app npm run build
-//
-// On a physical device in dev, `localhost` is the device itself — call
-// setApiBase('http://<your-machine-lan-ip>:8080') at startup instead.
+// Base URL of the Picknic API. Precedence: setApiBase() > PUBLIC_API_BASE >
+// dev/prod defaults. Only PUBLIC_-prefixed env vars are inlined by Rsbuild.
 const DEV_DEFAULT = 'http://localhost:8080';
 const PROD_DEFAULT = 'https://api.picknic.app';
 
 function resolveDefault(): string {
-  // Rsbuild statically replaces these property accesses at build time.
   const override = import.meta.env.PUBLIC_API_BASE as string | undefined;
   if (override) return override;
   return import.meta.env.PROD ? PROD_DEFAULT : DEV_DEFAULT;

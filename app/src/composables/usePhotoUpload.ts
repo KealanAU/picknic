@@ -1,14 +1,13 @@
-// Upload orchestration: drives the 3-step SAS handshake and exposes progress.
-// Takes raw bytes, so it's decoupled from where they came from (camera, library,
-// a test fixture). Compose with useCamera in a screen.
+// Drives the 3-step SAS upload handshake and exposes progress. Takes raw bytes,
+// so it's decoupled from where they came from (camera, library, test fixture).
 import { readonly, ref } from 'vue';
 import { completeUpload, createUpload, putBlob } from '../api/photos';
 
 export type UploadStage =
   | 'idle'
-  | 'requesting'  // minting the SAS target
-  | 'uploading'   // PUT to blob storage
-  | 'finalizing'  // registering the blob + caption
+  | 'requesting'
+  | 'uploading'
+  | 'finalizing'
   | 'done'
   | 'error';
 

@@ -1,6 +1,5 @@
-// Reactive wrapper over the guest-join API + session store. A module-level
-// singleton so every screen shares one guest state, mirroring useAuth for
-// hosts. Guests don't have accounts — "joined" is their authenticated state.
+// Reactive wrapper over the guest-join API + session store, a module-level
+// singleton mirroring useAuth. Guests have no account — "joined" is their auth state.
 import { computed, reactive } from 'vue';
 import { getEvent, joinEvent, type PublicEvent } from '../api/events';
 import { clearGuest, guestValid, loadGuest, saveGuest, type GuestSession } from '../api/guest';
@@ -31,10 +30,8 @@ export function useGuest() {
     status: computed(() => state.status),
     error: computed(() => state.error),
     isJoined: computed(() => state.status === 'joined'),
-    /** Settled once we know whether a persisted session exists. */
     isReady: computed(() => state.status === 'joined' || state.status === 'none'),
 
-    /** Restore a persisted guest session on app start. */
     async initialize(): Promise<void> {
       state.status = 'loading';
       const session = await loadGuest();
@@ -42,12 +39,11 @@ export function useGuest() {
         state.session = session;
         state.status = 'joined';
       } else {
-        if (session) await clearGuest(); // expired — don't leave it lingering
+        if (session) await clearGuest();
         state.status = 'none';
       }
     },
 
-    /** Validate a room code before asking for a name. Returns the event. */
     async lookup(code: string): Promise<PublicEvent> {
       state.error = null;
       try {
@@ -58,7 +54,6 @@ export function useGuest() {
       }
     },
 
-    /** Join with a code + name (+ optional QR secret). */
     async join(code: string, name: string, secret?: string): Promise<void> {
       state.status = 'loading';
       state.error = null;

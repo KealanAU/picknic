@@ -1,11 +1,8 @@
-// Holds the host account's bearer + refresh tokens, persisted so a login
-// survives an app restart. Pure state — no network calls (see auth.ts).
 import { storage } from './storage';
 
 export interface TokenSet {
   accessToken: string;
   refreshToken: string;
-  /** Epoch ms when the access token expires. */
   expiresAt: number;
 }
 
@@ -17,10 +14,8 @@ export function getTokens(): TokenSet | null {
   return current;
 }
 
-/** True when the access token is missing or within `skewMs` of expiring. */
 export function isExpired(skewMs = 15_000): boolean {
-  if (!current) return true;
-  return Date.now() >= current.expiresAt - skewMs;
+  return !current || Date.now() >= current.expiresAt - skewMs;
 }
 
 export async function loadTokens(): Promise<TokenSet | null> {

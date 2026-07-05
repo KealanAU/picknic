@@ -44,6 +44,24 @@ flow (Android) — the iOS side already uses `UIImagePickerController`.
 Add permissions: iOS `NSCameraUsageDescription`; Android `<uses-feature camera>`
 + runtime `CAMERA` permission.
 
+## Bundled fonts
+
+The Lynx bundle references the Picknic display face as `local("Comico")` in
+`src/style.css`. Do not load the `.ttf` from shared CSS with `url(...)` for the
+native bundle: Rspeedy rewrites that to a `webpack:///static/font/...` URL, and
+native Lynx cannot fetch that scheme.
+
+The host app must bundle and register the font instead:
+
+- iOS: add `ios/Resources/Fonts/Comico-Regular.ttf` to the app target's copied
+  resources and add `Fonts/Comico-Regular.ttf` under `UIAppFonts` in
+  `Info.plist`.
+- Android: copy `android/src/main/assets/fonts/Comico-Regular.ttf` into the host
+  app's `src/main/assets/fonts/` folder.
+
+The font's family/full/postscript names are `Comico`, `Comico Regular`, and
+`Comico-Regular`, matching the `local(...)` fallbacks in `src/style.css`.
+
 ## Two levels of camera
 
 1. **Capture a photo (implemented here).** System camera → JPEG → the app uploads

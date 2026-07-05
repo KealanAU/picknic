@@ -1,13 +1,10 @@
 namespace Picknic.Api.FilmProcessing.Filters;
 
-/// <summary>
-/// The tonal signature of film: lifted (never-quite-black) shadows plus a gentle
-/// S-curve for contrast. Applied to luma-preserving RGB equally.
-/// </summary>
+// Lifted (never-quite-black) shadows plus a gentle S-curve for contrast.
 public sealed class ToneCurveFilter : IImageFilter
 {
-    private readonly float _blackLift;   // 0 = true black, ~0.05 = faded film black
-    private readonly float _contrast;    // 0 = none, ~0.15 = noticeable S-curve
+    private readonly float _blackLift;
+    private readonly float _contrast;
 
     public ToneCurveFilter(float blackLift = 0.04f, float contrast = 0.12f)
     {
@@ -28,12 +25,10 @@ public sealed class ToneCurveFilter : IImageFilter
 
     private float Curve(float v)
     {
-        // Lift blacks: compress the range into [blackLift, 1].
         v = _blackLift + v * (1f - _blackLift);
-        // S-curve around mid grey using a smoothstep-style push.
         if (_contrast != 0f)
         {
-            var s = v * v * (3f - 2f * v); // smoothstep(0,1,v)
+            var s = v * v * (3f - 2f * v);
             v += (s - v) * _contrast;
         }
         return PixelBuffer.Clamp01(v);

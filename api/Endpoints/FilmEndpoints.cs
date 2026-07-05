@@ -5,16 +5,10 @@ using Picknic.Api.FilmProcessing;
 
 namespace Picknic.Api.Endpoints;
 
-/// <summary>
-/// Film-look endpoints: the selectable stock catalogue, and a host-triggered
-/// develop for a single photo. Kept separate from <see cref="UploadEndpoints"/>
-/// so the capture/upload path and the develop path stay independently evolvable.
-/// </summary>
 public static class FilmEndpoints
 {
     public static IEndpointRouteBuilder MapFilmEndpoints(this IEndpointRouteBuilder app)
     {
-        // Public catalogues for a client-side "choose your roll" picker.
         app.MapGet("/api/film/stocks", () =>
             Results.Ok(FilmStocks.Catalog.Select(s => new { s.Id, s.DisplayName })))
             .WithName("FilmStocks");
@@ -23,9 +17,7 @@ public static class FilmEndpoints
             Results.Ok(PrintStyles.Catalog.Select(p => new { p.Id, p.DisplayName })))
             .WithName("FilmPrints");
 
-        // Host develops one photo with a chosen stock + optional instant-print
-        // frame. Idempotent-ish: re-running overwrites the derivative. The original
-        // blob is never touched.
+        // Re-running overwrites the derivative; the original blob is never touched.
         app.MapPost("/api/events/{id:guid}/photos/{photoId:guid}/develop", async (
             Guid id, Guid photoId, string? stock, string? print, ClaimsPrincipal user,
             PicknicDbContext db, FilmDeveloper developer) =>

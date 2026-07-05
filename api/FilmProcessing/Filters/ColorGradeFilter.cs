@@ -1,17 +1,9 @@
 namespace Picknic.Api.FilmProcessing.Filters;
 
-/// <summary>
-/// The colour character of a stock, without needing a LUT file: per-channel
-/// lift / gamma / gain (a.k.a. shadows / midtones / highlights), a global
-/// temperature/tint push, and a saturation scale.
-///
-/// This is enough to get recognisable "Portra-ish" / "Gold-ish" looks out of the
-/// box. For exact film emulation, prefer a real 3D LUT via <see cref="LutFilter"/>
-/// — a stock can use either or both.
-/// </summary>
+// Per-channel lift/gamma/gain (shadows/midtones/highlights) plus a saturation
+// scale. A cheaper alternative to a full 3D LUT (see LutFilter).
 public sealed class ColorGradeFilter : IImageFilter
 {
-    // lift shifts blacks, gain scales whites, gamma bends the midtones.
     private readonly (float R, float G, float B) _lift;
     private readonly (float R, float G, float B) _gamma;
     private readonly (float R, float G, float B) _gain;
@@ -49,12 +41,9 @@ public sealed class ColorGradeFilter : IImageFilter
             d[i] = PixelBuffer.Clamp01(r);
             d[i + 1] = PixelBuffer.Clamp01(g);
             d[i + 2] = PixelBuffer.Clamp01(b);
-            // alpha (d[i + 3]) untouched
         }
     }
 
-    // lift/gamma/gain applied in the standard order: offset blacks, scale, then
-    // curve the midtones.
     private static float Grade(float v, float lift, float gamma, float gain)
     {
         v = lift + v * (gain - lift);

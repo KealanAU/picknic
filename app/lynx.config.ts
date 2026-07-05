@@ -17,6 +17,14 @@ export default defineConfig({
       main: './src/index.ts',
     },
   },
+  output: {
+    // Native Lynx cannot fetch CSS-emitted font assets when they are rewritten
+    // to `webpack:///static/font/...`. Inline fonts so Lynx Explorer can use
+    // the same @font-face fallback as a custom host app.
+    dataUriLimit: {
+      font: Number.MAX_SAFE_INTEGER,
+    },
+  },
   plugins: [
     // Prints a scannable QR code + dev URLs for the native Lynx bundle on
     // `rspeedy dev`. Press `a` in the terminal to switch between schemas.

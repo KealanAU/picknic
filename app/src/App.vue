@@ -56,7 +56,6 @@ onMounted(() => {
         </text>
       </view>
 
-      <!-- Restoring a persisted session -->
       <text
         v-if="status === 'idle' || status === 'loading'"
         :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }"
@@ -64,10 +63,8 @@ onMounted(() => {
         Loading…
       </text>
 
-      <!-- Signed in as a host -->
       <HostRoll v-else-if="isAuthenticated" :user="user" :style="{ flex: 1, minHeight: 0 }" @logout="logout" />
 
-      <!-- Joined an event as a guest -->
       <VyCard v-else-if="isJoined" :style="{ width: '100%' }">
         <text
           :style="{ fontFamily: t.font.display, fontSize: '28px', fontWeight: '400', letterSpacing: t.tracking, color: t.color.ink }"
@@ -83,11 +80,9 @@ onMounted(() => {
           Leave roll
         </VyButton>
       </VyCard>
-
-      <!-- Signed out: the onboarding tray (below) is up over this canvas. -->
     </view>
 
-    <!-- Gates the app until a host signs in or a guest joins. Self-manages its open state. -->
+    <!-- Gates the app until a host signs in or a guest joins; self-manages its open state. -->
     <OnboardingTray />
   </view>
 </template>
