@@ -26,6 +26,12 @@
     <PackageReference Include="Microsoft.OpenApi" Version="2.9.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
+    <!-- Film-look image decode/encode. SkiaSharp is MIT (free commercial use) and
+         actively patched — chosen over ImageSharp 2.x (unpatched advisories) and
+         3.x (commercial licence). NoDependencies native binaries cover the Debian
+         runtime image without needing libfontconfig (we don't draw text). -->
+    <PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" />
     <PackageReference Include="Stripe.net" Version="52.1.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
   </ItemGroup>

@@ -6,6 +6,7 @@
     "strict": true,
     "jsx": "preserve",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["@lynx-js/rspeedy/client"],

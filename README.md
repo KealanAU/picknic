@@ -4,7 +4,7 @@
 > party — everything pools into one roll that "develops" and is revealed at the
 > end of the event.
 
-**Stack:** .NET 10 / ASP.NET Core · Azure · Vue 3 · Lynx (mobile) · Stripe · Terraform · Docker
+**Stack:** .NET 10 / ASP.NET Core · Azure · Lynx (mobile) · Stripe · Terraform · Docker
 
 `dotnet` · `aspnet-core` · `csharp` · `azure` · `vue` · `terraform` · `stripe`
 
@@ -13,7 +13,6 @@
 | Folder | What | Tech |
 | ------ | ---- | ---- |
 | [`api/`](./api) | REST API, events, photos, payments | **.NET 10 / ASP.NET Core** + Stripe |
-| [`web/`](./web) | Guest-facing PWA + SSR for SEO | Nuxt 4 + [`@nuxt/ui`](https://ui.nuxt.com) (PWA) |
 | [`app/`](./app) | Native mobile app | Lynx via [`vue-lynx`](https://www.npmjs.com/package/vue-lynx) + [`@vyui`](https://www.npmjs.com/package/@vyui/kit) |
 | [`infra/`](./infra/terraform) | Azure infra as code | Terraform (Container Apps, ACR, Blob Storage) |
 
@@ -34,13 +33,6 @@ dotnet run
 ```
 The connection string lives in `appsettings.Development.json` (`ConnectionStrings:Default`); override it with `ConnectionStrings__Default` in production.
 
-### Web (Vue PWA)
-```bash
-cd web
-pnpm install
-pnpm dev
-```
-
 ### App (Lynx mobile)
 ```bash
 cd app
@@ -50,7 +42,7 @@ pnpm dev   # scan with the Lynx Explorer app
 
 ### Everything via Docker
 ```bash
-docker compose up --build   # api on :8080, web (SSR) on :3000
+docker compose up --build   # api on :8080
 ```
 The compose stack includes **Azurite** (Azure Blob emulator) on `:10000`, so the
 full photo upload → gallery flow works locally with no Azure account. The API

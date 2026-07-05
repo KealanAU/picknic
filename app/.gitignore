@@ -1,0 +1,9 @@
+# The repo-root .gitignore ignores all .env* files. Re-include the non-secret,
+# per-mode public config so it's committed, while keeping local overrides out.
+!.env.example
+!.env.development
+!.env.production
+
+# Machine-specific overrides (LAN IP, staging URLs, secrets) stay untracked.
+.env.local
+.env.*.local

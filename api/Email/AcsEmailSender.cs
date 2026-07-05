@@ -21,7 +21,11 @@ public class AcsEmailSender(IOptions<EmailOptions> options, ILogger<AcsEmailSend
                 content: new EmailContent(subject) { Html = htmlBody },
                 recipients: new EmailRecipients(new[] { new EmailAddress(to) }));
 
-            await client.SendAsync(Azure.WaitUntil.Completed, message);
+            // Started, not Completed: return once ACS accepts the message rather
+            // than blocking the triggering request while delivery is polled. A
+            // slow WaitUntil.Completed here stalls inline callers like Identity's
+            // /register long enough for the ingress/client to time out (499).
+            await client.SendAsync(Azure.WaitUntil.Started, message);
         }
         catch (Exception ex)
         {

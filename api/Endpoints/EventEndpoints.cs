@@ -22,7 +22,7 @@ public record UpdateEventRequest(
     DateTimeOffset UploadClosesAt,
     DateTimeOffset RevealAt);
 
-public record JoinRequest(string JoinSecret, string Name, string? Email);
+public record JoinRequest(string Name, string? Email, string? JoinSecret);
 
 public static class EventEndpoints
 {
@@ -108,7 +108,11 @@ public static class EventEndpoints
         .RequireAuthorization("Host")
         .WithName("GetEventQr");
 
-        // Guest joins with the QR secret and their name -> scoped token + guest UUID.
+        // Guest joins with their name -> scoped token + guest UUID.
+        // Two entry paths: a scanned QR carries the high-entropy join secret in
+        // its fragment, while a typed room code carries none. When a secret is
+        // supplied it must match; when it's absent the room code plus the open
+        // upload window (both enforced below) are the gate.
         group.MapPost("/{code}/join", async (
             string code, JoinRequest req, PicknicDbContext db,
             JoinSecretProtector secrets, GuestTokenService tokens) =>
@@ -119,7 +123,8 @@ public static class EventEndpoints
             var ev = await db.Events.FirstOrDefaultAsync(e => e.Code == code.ToUpperInvariant());
             if (ev is null) return Results.NotFound();
 
-            if (!SecretMatches(req.JoinSecret, secrets.Unprotect(ev.JoinSecretEnc)))
+            if (!string.IsNullOrEmpty(req.JoinSecret)
+                && !SecretMatches(req.JoinSecret, secrets.Unprotect(ev.JoinSecretEnc)))
                 return Results.Unauthorized();
 
             var now = DateTimeOffset.UtcNow;

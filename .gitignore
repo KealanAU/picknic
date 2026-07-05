@@ -1,13 +1,29 @@
 # ---- .NET ----
 [Bb]in/
 [Oo]bj/
+[Oo]ut/
 *.user
 *.suo
+*.userprefs
+*.userosscache
+*.sln.docstates
 .vs/
+project.lock.json
+artifacts/
 appsettings.*.local.json
 *.db
 *.db-shm
 *.db-wal
+
+# .NET test / coverage
+[Tt]est[Rr]esults/
+[Cc]overage*/
+*.coverage
+*.coveragexml
+*.trx
+coverage.*.json
+coverage.*.xml
+coverage.*.info
 
 # ---- Node / Vue / Lynx ----
 node_modules/
@@ -15,6 +31,11 @@ dist/
 .rspeedy/
 *.tsbuildinfo
 .vite/
+.pnpm-store/
+.eslintcache
+.npm/
+.yarn/
+*.tgz
 
 # ---- Nuxt ----
 .nuxt/
@@ -25,8 +46,11 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.development
+!.env.production
 *.pem
 *.pfx
+*.p12
 secrets.json
 
 # ---- Azure ----
@@ -41,11 +65,32 @@ local.settings.json
 *.tfvars
 !*.tfvars.example
 .terraform.lock.hcl
+crash.log
+crash.*.log
 
 # ---- Docker ----
-.env
+# (env handled above under Env & secrets)
 
-# ---- OS / editor ----
+# ---- OS ----
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---- Editors ----
 .idea/
+*.swp
+*.swo
+*~
+
+# ---- Logs ----
 *.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
