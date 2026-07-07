@@ -322,7 +322,7 @@ onMounted(() => {
     <scroll-view scroll-orientation="vertical" :enable-scroll="true" :style="{ width: '100%', height: '100%' }">
       <!-- Children are conditional, so space them with margins: vue-lynx renders
            v-if/v-for anchors as real nodes and container gap would double up. -->
-      <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', padding: '24px 20px 40px' }">
+      <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', padding: '24px 20px 120px' }">
         <PartyHeader
           kicker="Your party"
           :title="latestEvent?.name || 'New party'"
@@ -358,6 +358,41 @@ onMounted(() => {
         </VyCard>
       </view>
     </scroll-view>
+
+    <view
+      v-if="latestEvent && !cameraOpen"
+      :style="{
+        position: 'fixed',
+        bottom: '28px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 900,
+        width: '68px',
+        height: '68px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: t.radius.pill,
+        backgroundColor: t.color.blue,
+        borderWidth: '3px',
+        borderStyle: 'solid',
+        borderColor: '#ffffff',
+        boxShadow: t.shadow.lift,
+        opacity: busy ? 0.6 : 1,
+      }"
+      @tap="openCamera"
+    >
+      <VyIcon name="lucide:camera" :style="{ width: '30px', height: '30px', color: '#ffffff' }" />
+    </view>
+
+    <CameraScreen
+      v-if="cameraOpen && latestEvent && cameraPass"
+      :event-id="latestEvent.id"
+      :token="cameraPass.token"
+      :title="latestEvent.name"
+      @close="closeCamera"
+      @added="refreshGuests"
+    />
 
     <HostSettingsTray
       v-model:open="settingsTrayOpen"
