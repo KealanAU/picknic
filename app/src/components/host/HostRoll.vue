@@ -60,7 +60,7 @@ const dateLabel = computed(() => {
 });
 
 function messageFor(e: unknown): string {
-  return isApiError(e) ? e.message : 'Request failed';
+  return isApiError(e) ? e.message : 'Something went wrong. Try again.';
 }
 
 function windowFromPartyDates(partyStart: string, partyEnd: string) {
@@ -182,7 +182,7 @@ async function copyShareLink() {
     await copyText(qr.value.joinUrl);
     copied.value = true;
   } catch {
-    error.value = 'Could not copy the link on this device. Select the link and copy it manually.';
+    error.value = "Couldn't copy the link on this device. Try sharing it instead.";
   }
 }
 
@@ -209,7 +209,7 @@ async function copyText(value: string): Promise<void> {
 
 function shareText() {
   if (!latestEvent.value || !qr.value?.joinUrl) return '';
-  return `Join ${latestEvent.value.name} on Picknic. Room code: ${latestEvent.value.code} ${qr.value.joinUrl}`;
+  return `Join ${latestEvent.value.name} on Picknic — party code ${latestEvent.value.code}. ${qr.value.joinUrl}`;
 }
 
 function openExternal(url: string): void {
@@ -250,7 +250,7 @@ async function shareInviteImage(imageUrl: string) {
     }
     openExternal(imageUrl);
   } catch {
-    error.value = 'Sharing is not available on this device. The link is still ready to copy.';
+    error.value = "Sharing isn't available on this device. Copy the link instead.";
   }
 }
 
@@ -338,10 +338,10 @@ onMounted(() => {
         <VyCard v-if="!latestEvent" :style="{ width: '100%', marginTop: '14px' }">
           <view :style="{ display: 'flex', flexDirection: 'column' }">
             <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.muted }">
-              Name it, date it, get your room code.
+              Name it, date it, get your party code.
             </text>
             <VyButton color="primary" size="lg" block :style="{ marginTop: '12px' }" @tap="settingsTrayOpen = true">
-              Set up the party
+              Make the party
             </VyButton>
           </view>
         </VyCard>

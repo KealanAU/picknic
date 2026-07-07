@@ -44,12 +44,12 @@ async function continueCode() {
       Back
     </VyButton>
     <view :style="headerStyle">
-      <text :style="titleStyle">Join an event</text>
-      <text :style="subStyle">Enter the room code from the host, or scan their QR.</text>
+      <text :style="titleStyle">Join the party</text>
+      <text :style="subStyle">Enter the party code your host shared.</text>
     </view>
 
     <VyForm class="flex flex-col items-stretch w-full">
-      <VyFormField label="Room code">
+      <VyFormField label="Party code">
         <VyInput
           v-model="code"
           size="xl"

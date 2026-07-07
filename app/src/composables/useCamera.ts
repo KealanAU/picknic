@@ -17,7 +17,7 @@ export function useCamera() {
 
   async function capture(options?: CaptureOptions): Promise<CapturedPhoto | null> {
     if (!available) {
-      error.value = 'Camera is not available on this device.';
+      error.value = "Camera isn't available on this device.";
       return null;
     }
     busy.value = true;

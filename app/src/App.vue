@@ -45,7 +45,7 @@ onMounted(() => {
       <text
         :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }"
       >
-        Loading…
+        Developing…
       </text>
     </view>
 

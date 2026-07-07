@@ -26,7 +26,7 @@ const emailInput = computed({
 });
 
 const hostCta = computed(() => (mode.value === 'login' ? 'Log in' : 'Sign up'));
-const hostTitle = computed(() => (mode.value === 'login' ? 'Host sign in' : 'Create host account'));
+const hostTitle = computed(() => (mode.value === 'login' ? 'Welcome back' : 'Create your host account'));
 const canHostSubmit = computed(
   () => !!email.value && password.value.length >= 6 && !authBusy.value,
 );
@@ -55,7 +55,7 @@ async function submitHost() {
     </VyButton>
     <view :style="headerStyle">
       <text :style="titleStyle">{{ hostTitle }}</text>
-      <text :style="subStyle">Hosts create and manage Picknic events.</text>
+      <text :style="subStyle">Make the party, share the code, reveal the roll.</text>
     </view>
 
     <!-- No gap here: VyForm/VyFormField have fragment roots whose anchor nodes

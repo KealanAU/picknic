@@ -54,12 +54,12 @@ const inviteImage = computed(() => {
   <rect width="1080" height="1350" fill="#fff8f1"/>
   <rect x="80" y="80" width="920" height="1190" fill="#ffffff" stroke="#000000" stroke-width="6"/>
   <text x="540" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#000000">${name}</text>
-  <text x="540" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" fill="#3d4148">Join the Picknic room</text>
+  <text x="540" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" fill="#3d4148">Join the party on Picknic</text>
   <text x="540" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="142" font-weight="700" letter-spacing="8" fill="#006eff">${code}</text>
   <rect x="315" y="570" width="450" height="450" fill="#ffffff" stroke="#e2e8f0" stroke-width="4"/>
   <image href="${qr}" x="345" y="600" width="390" height="390" preserveAspectRatio="xMidYMid meet"/>
-  <text x="540" y="1110" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#000000">Scan the QR or use the room code</text>
-  <text x="540" y="1172" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#3d4148">The invite link is included with this share.</text>
+  <text x="540" y="1110" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#000000">Scan the QR or enter the party code</text>
+  <text x="540" y="1172" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#3d4148">One roll, revealed at the end.</text>
 </svg>`;
 
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.trim())}`;

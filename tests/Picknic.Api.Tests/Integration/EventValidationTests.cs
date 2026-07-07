@@ -180,6 +180,6 @@ public class EventValidationTests(PicknicApiFactory factory) : IClassFixture<Pic
             new { name = "Overflow", joinSecret = ev.JoinSecret });
         Assert.Equal(HttpStatusCode.Forbidden, over.StatusCode);
         var problem = await over.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Contains("guest limit", problem.GetProperty("detail").GetString());
+        Assert.Contains("party is full", problem.GetProperty("detail").GetString());
     }
 }

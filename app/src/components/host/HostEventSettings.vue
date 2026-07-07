@@ -60,7 +60,7 @@ function save() {
     </VyForm>
 
     <VyButton color="primary" size="lg" block :loading="busy" :disabled="!canSave" :style="{ marginTop: '10px' }" @tap="save">
-      {{ event ? 'Save' : 'Create party' }}
+      {{ event ? 'Save' : 'Make the party' }}
     </VyButton>
   </view>
 </template>

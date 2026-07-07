@@ -153,13 +153,13 @@ public static class EventEndpoints
 
             var now = DateTimeOffset.UtcNow;
             if (!ev.UploadOpen(now))
-                return Results.Problem("Uploads are closed for this event.", statusCode: 403);
+                return Results.Problem("Uploads are closed for this party.", statusCode: 403);
 
             var cap = PlanLimits.For(ev.Tier).MaxGuests;
             var guestCount = await db.Guests.CountAsync(
                 g => g.EventId == ev.Id && g.RemovedAt == null && !g.IsHost);
             if (guestCount >= cap)
-                return Results.Problem("This event has reached its guest limit.", statusCode: 403);
+                return Results.Problem("This party is full.", statusCode: 403);
 
             var guest = new Guest
             {

@@ -17,9 +17,9 @@ function friendly(e: unknown): string {
   if (isApiError(e)) {
     // 404/401/429 come back as bare problems (boilerplate title only), so keep
     // friendly text; 403 carries a server detail (uploads closed / guest limit).
-    if (e.status === 404) return "That event code doesn't exist.";
-    if (e.status === 401) return 'That join link is invalid — ask the host for the QR.';
-    if (e.status === 403) return problemMessage(e.problem) ?? 'Uploads are closed for this event.';
+    if (e.status === 404) return "That code doesn't match any party.";
+    if (e.status === 401) return "That join link didn't work — ask your host for a fresh one.";
+    if (e.status === 403) return problemMessage(e.problem) ?? 'Uploads are closed for this party.';
     if (e.status === 429) return 'Too many attempts. Give it a minute.';
     return e.message;
   }

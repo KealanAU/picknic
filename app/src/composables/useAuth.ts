@@ -23,11 +23,11 @@ function fail(e: unknown): never {
 }
 
 function authMessage(e: unknown): string {
-  if (!isApiError(e)) return 'Something went wrong';
+  if (!isApiError(e)) return 'Something went wrong. Try again.';
   const server = problemMessage(e.problem);
   if (server) return server;
-  if (e.status === 400 || e.status === 401) return 'Invalid email or password';
-  return e.message || 'Something went wrong';
+  if (e.status === 400 || e.status === 401) return "That email or password isn't right.";
+  return e.message || 'Something went wrong. Try again.';
 }
 
 function accountAlreadyExists(e: unknown): boolean {

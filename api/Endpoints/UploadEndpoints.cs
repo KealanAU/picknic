@@ -28,7 +28,7 @@ public static class UploadEndpoints
 
             var now = DateTimeOffset.UtcNow;
             if (!ev.UploadOpen(now))
-                return Results.Problem("Uploads are closed for this event.", statusCode: 403);
+                return Results.Problem("Uploads are closed for this party.", statusCode: 403);
 
             // SAS dies at the window close (or sooner) — Azure enforces it.
             var expiry = now.AddMinutes(5) < ev.UploadClosesAt ? now.AddMinutes(5) : ev.UploadClosesAt;
@@ -176,7 +176,7 @@ public static class UploadEndpoints
         if (count >= cap)
         {
             await blobs.DeleteAsync(blobPath);
-            return Results.Problem("Photo limit reached for this event.", statusCode: 403);
+            return Results.Problem("This party's roll is full — photo limit reached.", statusCode: 403);
         }
 
         var photo = new Photo

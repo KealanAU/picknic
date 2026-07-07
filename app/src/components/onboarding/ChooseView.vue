@@ -12,14 +12,14 @@ defineEmits<{
   <VyTrayView id="choose">
     <view :style="{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '14px' }">
       <text :style="titleStyle">Welcome to Picknic</text>
-      <text :style="subStyle">One roll, revealed at the end.</text>
+      <text :style="subStyle">Snapping at a party, or throwing one?</text>
     </view>
     <view :style="{ display: 'flex', flexDirection: 'column', gap: '10px' }">
       <VyButton color="primary" size="xl" block leading-icon="lucide:ticket" @tap="$emit('guest')">
-        Join an event
+        Join a party
       </VyButton>
       <VyButton variant="outline" size="xl" block leading-icon="lucide:calendar-plus" @tap="$emit('host')">
-        Host an event
+        Host a party
       </VyButton>
     </view>
   </VyTrayView>

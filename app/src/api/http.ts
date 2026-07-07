@@ -83,7 +83,7 @@ export function problemMessage(payload: unknown): string | null {
 }
 
 function messageFor(status: number, payload: unknown): string {
-  return problemMessage(payload) ?? `Request failed (${status})`;
+  return problemMessage(payload) ?? `Something went wrong (${status}).`;
 }
 
 export async function request<T = unknown>(
