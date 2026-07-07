@@ -3,6 +3,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Microsoft.Extensions.Options;
+using Picknic.Api.FilmProcessing;
 
 namespace Picknic.Api.Storage;
 
@@ -42,31 +43,32 @@ public record UploadTarget(string UploadUrl, string BlobPath);
 /// (Azurite / local dev), it falls back to account-key SAS, since the emulator
 /// doesn't support user delegation. Upload SAS is create/write-only on a single,
 /// server-named blob and expires at the upload window close.
+/// Members are virtual so integration tests can substitute an in-memory fake.
 /// </summary>
 public class BlobSasService(IOptions<StorageOptions> options)
 {
     private readonly StorageOptions _opts = options.Value;
     private readonly bool _useConnectionString = !string.IsNullOrWhiteSpace(options.Value.ConnectionString);
 
-    public bool Enabled => _opts.Enabled;
+    public virtual bool Enabled => _opts.Enabled;
 
-    public long MaxBytes => _opts.MaxBytes;
+    public virtual long MaxBytes => _opts.MaxBytes;
 
     private BlobServiceClient Service() => _useConnectionString
         ? new BlobServiceClient(_opts.ConnectionString)
         : new BlobServiceClient(new Uri(_opts.AccountUrl), new DefaultAzureCredential());
 
     /// <summary>The blob container photos live in — used to parse Event Grid subjects.</summary>
-    public string Container => _opts.Container;
+    public virtual string Container => _opts.Container;
 
     /// <summary>Creates the container if missing — used in dev/emulator where Terraform hasn't.</summary>
-    public async Task InitializeAsync()
+    public virtual async Task InitializeAsync()
     {
         if (!Enabled || !_useConnectionString) return;
         await Service().GetBlobContainerClient(_opts.Container).CreateIfNotExistsAsync();
     }
 
-    public async Task<UploadTarget> CreateUploadSasAsync(
+    public virtual async Task<UploadTarget> CreateUploadSasAsync(
         Guid eventId, Guid guestId, DateTimeOffset expiresAt)
     {
         // Guest id is in the path so an Event Grid BlobCreated handler can
@@ -77,10 +79,10 @@ public class BlobSasService(IOptions<StorageOptions> options)
         return new UploadTarget(url, blobPath);
     }
 
-    public Task<string> CreateReadSasAsync(string blobPath, DateTimeOffset expiresAt) =>
+    public virtual Task<string> CreateReadSasAsync(string blobPath, DateTimeOffset expiresAt) =>
         SignedUriAsync(blobPath, BlobSasPermissions.Read, expiresAt);
 
-    public async Task<long?> GetSizeAsync(string blobPath)
+    public virtual async Task<long?> GetSizeAsync(string blobPath)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         if (!await blob.ExistsAsync()) return null;
@@ -88,7 +90,7 @@ public class BlobSasService(IOptions<StorageOptions> options)
         return props.Value.ContentLength;
     }
 
-    public async Task<(long Size, string? ContentType)?> GetBlobInfoAsync(string blobPath)
+    public virtual async Task<(long Size, string? ContentType)?> GetBlobInfoAsync(string blobPath)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         if (!await blob.ExistsAsync()) return null;
@@ -96,14 +98,21 @@ public class BlobSasService(IOptions<StorageOptions> options)
         return (props.Value.ContentLength, props.Value.ContentType);
     }
 
-    public async Task DeleteAsync(string blobPath)
+    public virtual async Task DeleteAsync(string blobPath)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         await blob.DeleteIfExistsAsync();
     }
 
+    /// <summary>Deletes a photo's original blob and its developed derivative together.</summary>
+    public virtual async Task DeleteWithDerivativeAsync(string blobPath)
+    {
+        await DeleteAsync(blobPath);
+        await DeleteAsync(FilmDeveloper.DevelopedPath(blobPath));
+    }
+
     /// <summary>Opens a blob for reading server-side (e.g. to develop a photo). Null if absent.</summary>
-    public async Task<Stream?> OpenReadAsync(string blobPath)
+    public virtual async Task<Stream?> OpenReadAsync(string blobPath)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         if (!await blob.ExistsAsync()) return null;
@@ -111,7 +120,7 @@ public class BlobSasService(IOptions<StorageOptions> options)
     }
 
     /// <summary>Writes bytes to a blob server-side, overwriting, with the given content type.</summary>
-    public async Task UploadAsync(string blobPath, byte[] content, string contentType)
+    public virtual async Task UploadAsync(string blobPath, byte[] content, string contentType)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         using var ms = new MemoryStream(content);
@@ -121,7 +130,7 @@ public class BlobSasService(IOptions<StorageOptions> options)
         });
     }
 
-    public async Task<bool> ExistsAsync(string blobPath)
+    public virtual async Task<bool> ExistsAsync(string blobPath)
     {
         var blob = Service().GetBlobContainerClient(_opts.Container).GetBlobClient(blobPath);
         return await blob.ExistsAsync();
@@ -154,13 +163,39 @@ public class BlobSasService(IOptions<StorageOptions> options)
         }
         else
         {
-            var key = await service.GetUserDelegationKeyAsync(
-                startsOn: now.AddMinutes(-2), expiresOn: expiresAt, cancellationToken: default);
-            var sas = builder.ToSasQueryParameters(key.Value, service.AccountName).ToString();
+            var key = await DelegationKeyAsync(service, expiresAt);
+            var sas = builder.ToSasQueryParameters(key, service.AccountName).ToString();
             url = $"{blob.Uri}?{sas}";
         }
 
         return RewriteHost(service, url);
+    }
+
+    // One delegation key covers many SAS mints (GET /photos signs one per photo);
+    // fetching it per blob is a storage round-trip each. Cached until it can no
+    // longer cover a requested expiry.
+    private static UserDelegationKey? _delegationKey;
+    private static readonly SemaphoreSlim DelegationKeyLock = new(1, 1);
+
+    private static async Task<UserDelegationKey> DelegationKeyAsync(
+        BlobServiceClient service, DateTimeOffset expiresAt)
+    {
+        if (_delegationKey is { } cached && cached.SignedExpiresOn >= expiresAt) return cached;
+        await DelegationKeyLock.WaitAsync();
+        try
+        {
+            if (_delegationKey is { } fresh && fresh.SignedExpiresOn >= expiresAt) return fresh;
+            var now = DateTimeOffset.UtcNow;
+            var expiresOn = expiresAt > now.AddHours(2) ? expiresAt : now.AddHours(2);
+            var key = await service.GetUserDelegationKeyAsync(
+                startsOn: now.AddMinutes(-2), expiresOn: expiresOn, cancellationToken: default);
+            _delegationKey = key.Value;
+            return key.Value;
+        }
+        finally
+        {
+            DelegationKeyLock.Release();
+        }
     }
 
     // The SAS signature covers the account + path, not the host — so we can swap

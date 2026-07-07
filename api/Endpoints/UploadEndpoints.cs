@@ -49,8 +49,13 @@ public static class UploadEndpoints
         {
             var guest = await ActiveGuest(db, user, id);
             if (guest is null) return Results.Forbid();
-            if (!req.BlobPath.StartsWith($"{id}/{guest.Id}/"))
-                return Results.BadRequest("Blob path does not belong to this guest.");
+            if (!IsMintedBlobPath(req.BlobPath, id, guest.Id))
+                return Results.Problem("Blob path does not belong to this guest.", statusCode: 400);
+            if (req.Caption is { Length: > Photo.CaptionMaxLength })
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["caption"] = [$"Caption must be {Photo.CaptionMaxLength} characters or fewer."],
+                });
 
             return await RegisterPhotoAsync(db, blobs, id, guest.Id, req.BlobPath, req.Caption);
         })
@@ -58,7 +63,6 @@ public static class UploadEndpoints
         .RequireRateLimiting("upload")
         .WithName("CompleteUpload");
 
-        // Host removes a single inappropriate photo (blob + row).
         group.MapDelete("/photos/{photoId:guid}", async (
             Guid id, Guid photoId, ClaimsPrincipal user,
             PicknicDbContext db, BlobSasService blobs) =>
@@ -71,7 +75,8 @@ public static class UploadEndpoints
             var photo = await db.Photos.FirstOrDefaultAsync(p => p.Id == photoId && p.EventId == id);
             if (photo is null) return Results.NotFound();
 
-            if (blobs.Enabled) await blobs.DeleteAsync(photo.BlobPath);
+            if (blobs.Enabled)
+                await blobs.DeleteWithDerivativeAsync(photo.BlobPath);
             db.Photos.Remove(photo);
             await db.SaveChangesAsync();
             return Results.Ok(new { deleted = photo.Id });
@@ -95,12 +100,11 @@ public static class UploadEndpoints
 
             // Serve the developed (film-look) derivative when it exists, else the
             // original. Keeps develop fully optional and decoupled from upload.
-            async Task<string?> ReadUrl(Photo p)
-            {
-                var devPath = FilmDeveloper.DevelopedPath(p.BlobPath);
-                var path = await blobs.ExistsAsync(devPath) ? devPath : p.BlobPath;
-                return await blobs.CreateReadSasAsync(path, expiry);
-            }
+            // DevelopedAt (stamped by the develop endpoint) replaces a per-photo
+            // blob existence probe.
+            async Task<string?> ReadUrl(Photo p) => await blobs.CreateReadSasAsync(
+                p.DevelopedAt is not null ? FilmDeveloper.DevelopedPath(p.BlobPath) : p.BlobPath,
+                expiry);
 
             var items = blobs.Enabled
                 ? await Task.WhenAll(photos.Select(async p => new
@@ -122,6 +126,7 @@ public static class UploadEndpoints
 
             return Results.Ok(new { revealed = true, photos = items });
         })
+        .RequireRateLimiting("photos")
         .WithName("GetPhotos");
 
         return app;
@@ -150,19 +155,19 @@ public static class UploadEndpoints
         if (ev is null) return Results.NotFound();
 
         var info = await blobs.GetBlobInfoAsync(blobPath);
-        if (info is null) return Results.BadRequest("Blob not found.");
+        if (info is null) return Results.Problem("Blob not found.", statusCode: 400);
         var (size, contentType) = info.Value;
 
         if (contentType is null || !contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
             await blobs.DeleteAsync(blobPath);
-            return Results.BadRequest("Only image uploads are allowed.");
+            return Results.Problem("Only image uploads are allowed.", statusCode: 400);
         }
 
         if (size > blobs.MaxBytes)
         {
             await blobs.DeleteAsync(blobPath);
-            return Results.BadRequest("Photo exceeds the maximum allowed size.");
+            return Results.Problem("Photo exceeds the maximum allowed size.", statusCode: 400);
         }
 
         var cap = PlanLimits.For(ev.Tier).MaxPhotosPerGuest;
@@ -193,6 +198,19 @@ public static class UploadEndpoints
             return Results.Ok();
         }
         return Results.Ok(new { photo.Id });
+    }
+
+    // Upload SAS mints exactly "{eventId}/{guestId}/{Guid:n}.jpg"; the complete
+    // callback must name one of those, not an arbitrary path. Pinning the whole
+    // shape (not just the prefix) rejects "../" traversal, another guest's blobs,
+    // and the ".dev.jpg" derivatives.
+    internal static bool IsMintedBlobPath(string blobPath, Guid eventId, Guid guestId)
+    {
+        var prefix = $"{eventId}/{guestId}/";
+        if (!blobPath.StartsWith(prefix, StringComparison.Ordinal)) return false;
+        var name = blobPath[prefix.Length..];
+        return name.EndsWith(".jpg", StringComparison.Ordinal)
+            && Guid.TryParseExact(name[..^4], "N", out _);
     }
 
     // The token must be scoped to this event AND the guest must still be active —

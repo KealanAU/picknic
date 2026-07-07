@@ -33,7 +33,6 @@ public static class GuestEndpoints
         .RequireAuthorization("Host")
         .WithName("ListGuests");
 
-        // Kick a guest: revokes their token (checked on upload) and removes their photos.
         group.MapDelete("/{guestId:guid}", async (
             Guid id, Guid guestId, ClaimsPrincipal user,
             PicknicDbContext db, BlobSasService blobs) =>
@@ -47,7 +46,8 @@ public static class GuestEndpoints
 
             var photos = await db.Photos.Where(p => p.UploadedByGuestId == guestId).ToListAsync();
             if (blobs.Enabled)
-                foreach (var p in photos) await blobs.DeleteAsync(p.BlobPath);
+                foreach (var p in photos)
+                    await blobs.DeleteWithDerivativeAsync(p.BlobPath);
             db.Photos.RemoveRange(photos);
 
             await db.SaveChangesAsync();

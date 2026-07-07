@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Azure.Messaging.EventGrid;
 using Azure.Messaging.EventGrid.SystemEvents;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +35,7 @@ public static class EventGridEndpoints
         {
             var logger = loggerFactory.CreateLogger("EventGrid");
             var secret = egOpts.Value.Secret;
-            if (!string.IsNullOrEmpty(secret) && code != secret)
+            if (!string.IsNullOrEmpty(secret) && !SecretMatches(code, secret))
                 return Results.Unauthorized();
 
             using var reader = new StreamReader(request.Body);
@@ -46,7 +48,7 @@ public static class EventGridEndpoints
             }
             catch
             {
-                return Results.BadRequest();
+                return Results.Problem("Invalid Event Grid payload.", statusCode: 400);
             }
 
             foreach (var gridEvent in events)
@@ -104,6 +106,10 @@ public static class EventGridEndpoints
         var idx = subject.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
         return idx < 0 ? null : subject[(idx + marker.Length)..];
     }
+
+    private static bool SecretMatches(string? provided, string expected) =>
+        provided is not null && CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(provided), Encoding.UTF8.GetBytes(expected));
 
     private static bool TryParseIds(string blobPath, out Guid eventId, out Guid guestId)
     {

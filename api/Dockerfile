@@ -14,6 +14,8 @@ WORKDIR /app
 # curl is used by the container healthcheck.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
+    && mkdir -p /home/app/.aspnet/DataProtection-Keys \
+    && chown -R $APP_UID:$APP_UID /home/app/.aspnet \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app .
 EXPOSE 8080

@@ -27,7 +27,7 @@ public sealed class FilmDeveloper(IFilmProcessor processor, BlobSasService blobs
         await using var source = await blobs.OpenReadAsync(originalBlobPath);
         if (source is null) return null;
 
-        // ImageSharp needs a seekable stream, so buffer the network read to memory.
+        // The codec needs a seekable stream, so buffer the network read to memory.
         using var ms = new MemoryStream();
         await source.CopyToAsync(ms, ct);
         ms.Position = 0;

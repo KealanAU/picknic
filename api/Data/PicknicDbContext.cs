@@ -19,23 +19,33 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
         base.OnModelCreating(builder);
 
         // Postgres 'timestamptz' only accepts UTC (zero-offset) DateTimeOffsets;
-        // normalise any client-supplied offset to UTC on write.
-        var toUtc = new ValueConverter<DateTimeOffset, DateTimeOffset>(
-            v => v.ToUniversalTime(), v => v);
-        var toUtcNullable = new ValueConverter<DateTimeOffset?, DateTimeOffset?>(
-            v => v == null ? null : v.Value.ToUniversalTime(), v => v);
+        // normalise any client-supplied offset to UTC on write. SQLite (the
+        // integration-test provider) can't order or compare DateTimeOffset text
+        // columns, so there the values are stored as UTC ticks instead.
+        var sqlite = Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
+        ValueConverter dateConverter = sqlite
+            ? new ValueConverter<DateTimeOffset, long>(
+                v => v.UtcTicks, v => new DateTimeOffset(v, TimeSpan.Zero))
+            : new ValueConverter<DateTimeOffset, DateTimeOffset>(
+                v => v.ToUniversalTime(), v => v);
+        ValueConverter nullableDateConverter = sqlite
+            ? new ValueConverter<DateTimeOffset?, long?>(
+                v => v == null ? null : v.Value.UtcTicks,
+                v => v == null ? null : new DateTimeOffset(v.Value, TimeSpan.Zero))
+            : new ValueConverter<DateTimeOffset?, DateTimeOffset?>(
+                v => v == null ? null : v.Value.ToUniversalTime(), v => v);
 
         foreach (var prop in builder.Model.GetEntityTypes().SelectMany(t => t.GetProperties()))
         {
-            if (prop.ClrType == typeof(DateTimeOffset)) prop.SetValueConverter(toUtc);
-            else if (prop.ClrType == typeof(DateTimeOffset?)) prop.SetValueConverter(toUtcNullable);
+            if (prop.ClrType == typeof(DateTimeOffset)) prop.SetValueConverter(dateConverter);
+            else if (prop.ClrType == typeof(DateTimeOffset?)) prop.SetValueConverter(nullableDateConverter);
         }
 
         builder.Entity<Event>(e =>
         {
             e.HasIndex(x => x.Code).IsUnique();
             e.Property(x => x.Code).HasMaxLength(32);
-            e.Property(x => x.Name).HasMaxLength(120);
+            e.Property(x => x.Name).HasMaxLength(Event.NameMaxLength);
             e.HasMany(x => x.Photos)
                 .WithOne()
                 .HasForeignKey(p => p.EventId)
@@ -51,13 +61,13 @@ public class PicknicDbContext(DbContextOptions<PicknicDbContext> options)
 
         builder.Entity<Guest>(g =>
         {
-            g.Property(x => x.DisplayName).HasMaxLength(80);
+            g.Property(x => x.DisplayName).HasMaxLength(Guest.DisplayNameMaxLength);
             g.HasIndex(x => x.EventId);
         });
 
         builder.Entity<Invite>(i =>
         {
-            i.Property(x => x.Email).HasMaxLength(256);
+            i.Property(x => x.Email).HasMaxLength(Invite.EmailMaxLength);
             i.HasIndex(x => new { x.EventId, x.Email }).IsUnique();
         });
 

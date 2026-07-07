@@ -7,6 +7,8 @@ namespace Picknic.Api.Models;
 /// </summary>
 public class Event
 {
+    public const int NameMaxLength = 120;
+
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>Human-friendly code shown on invites (low entropy — not a secret).</summary>
@@ -42,6 +44,9 @@ public class Event
 
 public class Photo
 {
+    /// <summary>App-level cap; the column is unbounded text.</summary>
+    public const int CaptionMaxLength = 500;
+
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid EventId { get; set; }
 
@@ -53,4 +58,7 @@ public class Photo
     public string? Caption { get; set; }
     public long SizeBytes { get; set; }
     public DateTimeOffset UploadedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>Set when a developed derivative exists — saves a per-photo blob existence probe.</summary>
+    public DateTimeOffset? DevelopedAt { get; set; }
 }

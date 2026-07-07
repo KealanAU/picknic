@@ -2,6 +2,8 @@ namespace Picknic.Api.Models;
 
 public class Guest
 {
+    public const int DisplayNameMaxLength = 80;
+
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid EventId { get; set; }
     public required string DisplayName { get; set; }

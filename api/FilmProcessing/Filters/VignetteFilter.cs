@@ -1,6 +1,5 @@
 namespace Picknic.Api.FilmProcessing.Filters;
 
-// Darkened corner falloff.
 public sealed class VignetteFilter : IImageFilter
 {
     private readonly float _amount;

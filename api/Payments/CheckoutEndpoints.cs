@@ -34,7 +34,7 @@ public static class CheckoutEndpoints
                 return Results.Problem("Payments are not configured.", statusCode: 501);
 
             if (!Plans.TryGetValue(req.Plan, out var plan))
-                return Results.BadRequest(new { error = $"Unknown plan '{req.Plan}'." });
+                return Results.Problem($"Unknown plan '{req.Plan}'.", statusCode: 400);
 
             var hostId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var code = req.EventCode.ToUpperInvariant();
@@ -92,7 +92,7 @@ public static class CheckoutEndpoints
             }
             catch (StripeException)
             {
-                return Results.BadRequest();
+                return Results.Problem("Invalid Stripe webhook signature.", statusCode: 400);
             }
 
             // Stripe delivers at-least-once; skip anything already handled.

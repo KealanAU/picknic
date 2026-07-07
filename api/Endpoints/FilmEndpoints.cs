@@ -30,11 +30,27 @@ public static class FilmEndpoints
             var photo = await db.Photos.FirstOrDefaultAsync(p => p.Id == photoId && p.EventId == id);
             if (photo is null) return Results.NotFound();
 
-            var stockId = stock ?? FilmStocks.Default;
-            var devPath = await developer.DevelopAsync(photo.BlobPath, stockId, print);
-            return devPath is null
-                ? Results.Problem("Could not develop photo (storage disabled or blob missing).", statusCode: 409)
-                : Results.Ok(new { photoId, stock = stockId, print = print ?? PrintStyles.None, developed = true });
+            var stockId = string.IsNullOrWhiteSpace(stock) ? FilmStocks.Default : stock;
+            if (!FilmStocks.Exists(stockId))
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["stock"] = [$"Unknown film stock '{stock}'."],
+                });
+            var printId = string.IsNullOrWhiteSpace(print) ? PrintStyles.None : print;
+            if (printId != PrintStyles.None && PrintStyles.Resolve(printId) is null)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["print"] = [$"Unknown print style '{print}'."],
+                });
+
+            var devPath = await developer.DevelopAsync(photo.BlobPath, stockId, printId);
+            if (devPath is null)
+                return Results.Problem("Could not develop photo (storage disabled or blob missing).", statusCode: 409);
+
+            photo.DevelopedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new { photoId, stock = stockId, print = printId, developed = true });
         })
         .RequireAuthorization("Host")
         .WithName("DevelopPhoto");

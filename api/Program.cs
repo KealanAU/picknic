@@ -1,3 +1,4 @@
+using System.Net;
 using System.Threading.RateLimiting;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -44,16 +45,31 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<PicknicDbContext>("database");
 
 // Running behind Container Apps ingress: trust the proxy's forwarded headers so
-// RemoteIpAddress is the real client (used to partition rate limits).
+// RemoteIpAddress is the real client (used to partition rate limits). Only the
+// proxies/networks listed in ForwardedHeaders:Known* are trusted — without them
+// the framework default (loopback only) stands, so an external caller can't
+// spoof X-Forwarded-For to dodge the IP-partitioned rate limits.
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    var knownProxies = (builder.Configuration["ForwardedHeaders:KnownProxies"] ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var knownNetworks = (builder.Configuration["ForwardedHeaders:KnownNetworks"] ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    if (knownProxies.Length == 0 && knownNetworks.Length == 0) return;
+
     o.KnownIPNetworks.Clear();
     o.KnownProxies.Clear();
+    foreach (var proxy in knownProxies)
+        o.KnownProxies.Add(IPAddress.Parse(proxy));
+    foreach (var network in knownNetworks)
+        o.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
 });
 
-// Per-client rate limits on the abusable public endpoints (join, uploads,
-// checkout). Partitioned by client IP; anything over the window gets a 429.
+// Per-client rate limits on the abusable public endpoints (auth, join,
+// uploads, checkout). Partitioned by client IP; anything over the window gets
+// a 429.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -69,15 +85,19 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
             });
 
+    // Covers login (credential stuffing) and the email-sending endpoints
+    // (register, resendConfirmationEmail, forgotPassword).
+    options.AddPolicy("auth", PerIp(10));
     options.AddPolicy("join", PerIp(10));
+    options.AddPolicy("invite", PerIp(10));
     options.AddPolicy("upload", PerIp(60));
+    options.AddPolicy("photos", PerIp(30));
     options.AddPolicy("checkout", PerIp(5));
 });
 
 builder.Services.AddIdentityApiEndpoints<AppUser>()
     .AddEntityFrameworkStores<PicknicDbContext>();
 
-// Route Identity's confirm/reset emails through our provider instead of its no-op.
 builder.Services.AddTransient<IEmailSender<AppUser>, IdentityEmailSender>();
 
 // Guests authenticate on a separate JWT scheme, not Identity.
@@ -120,7 +140,6 @@ builder.Services.AddSingleton<IFilmProcessor, FilmProcessor>();
 builder.Services.AddScoped<FilmDeveloper>();
 builder.Services.AddSingleton<JoinSecretProtector>();
 builder.Services.AddSingleton<EventLinks>();
-// Real email via Azure Communication Services when configured; otherwise log.
 var emailOpts = builder.Configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()
     ?? new EmailOptions();
 if (emailOpts.Enabled)
@@ -128,7 +147,6 @@ if (emailOpts.Enabled)
 else
     builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
 
-// Emails guests once their roll develops (RevealAt passes).
 builder.Services.AddHostedService<RevealNotificationService>();
 
 // Persist the Data Protection key ring to blob storage (encrypted with a Key
@@ -145,10 +163,13 @@ if (!string.IsNullOrWhiteSpace(dpBlobUri) && !string.IsNullOrWhiteSpace(dpKeyVau
         .ProtectKeysWithAzureKeyVault(new Uri(dpKeyVaultKeyId), credential);
 }
 
-// Lock CORS to the configured web origin(s) in prod; allow any in dev where
-// Cors:AllowedOrigins is empty.
+// Lock CORS to the configured web origin(s). Development may leave
+// Cors:AllowedOrigins empty to allow any origin; outside Development an unset
+// value is a misconfiguration we fail fast on rather than silently falling open.
 var corsOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+if (corsOrigins.Length == 0 && !builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("Cors:AllowedOrigins must be configured outside Development.");
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 {
     if (corsOrigins.Length > 0)
@@ -164,22 +185,31 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PicknicDbContext>();
-    var conn = db.Database.GetDbConnection();
-    await conn.OpenAsync();
-    try
+    if (db.Database.IsNpgsql())
     {
-        await using (var lockCmd = conn.CreateCommand())
+        var conn = db.Database.GetDbConnection();
+        await conn.OpenAsync();
+        try
         {
-            lockCmd.CommandText = "SELECT pg_advisory_lock(4242424242)";
-            await lockCmd.ExecuteNonQueryAsync();
+            await using (var lockCmd = conn.CreateCommand())
+            {
+                lockCmd.CommandText = "SELECT pg_advisory_lock(4242424242)";
+                await lockCmd.ExecuteNonQueryAsync();
+            }
+            await db.Database.MigrateAsync();
         }
-        await db.Database.MigrateAsync();
+        finally
+        {
+            await using var unlockCmd = conn.CreateCommand();
+            unlockCmd.CommandText = "SELECT pg_advisory_unlock(4242424242)";
+            await unlockCmd.ExecuteNonQueryAsync();
+        }
     }
-    finally
+    else
     {
-        await using var unlockCmd = conn.CreateCommand();
-        unlockCmd.CommandText = "SELECT pg_advisory_unlock(4242424242)";
-        await unlockCmd.ExecuteNonQueryAsync();
+        // A non-Postgres provider means integration tests: the Npgsql migrations
+        // (and advisory lock) don't apply there, so build the schema from the model.
+        await db.Database.EnsureCreatedAsync();
     }
 
     // Ensure the photos container exists when running against the emulator.
@@ -192,6 +222,7 @@ if (app.Environment.IsDevelopment())
 app.UseForwardedHeaders();
 app.UseCors();
 app.UseRateLimiter();
+app.UseMiddleware<AuthInputSanitizationMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -208,7 +239,7 @@ app.MapHealthChecks("/api/health", new HealthCheckOptions
     },
 }).WithName("Health");
 
-app.MapGroup("/api/auth").MapIdentityApi<AppUser>();
+app.MapGroup("/api/auth").RequireRateLimiting("auth").MapIdentityApi<AppUser>();
 
 app.MapEventEndpoints();
 app.MapUploadEndpoints();
@@ -219,3 +250,6 @@ app.MapInviteEndpoints();
 app.MapCheckoutEndpoints();
 
 app.Run();
+
+// Exposes the implicit entry-point class to WebApplicationFactory-based tests.
+public partial class Program { }

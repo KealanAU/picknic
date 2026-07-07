@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Picknic.Api.Data;
 using Picknic.Api.Email;
@@ -59,8 +60,9 @@ public class RevealNotificationService(
 
                 var link = $"{webBase}/gallery/{ev.Code}";
                 var subject = "Your Picknic photos have developed";
+                // The name is host-controlled — encode it before it lands in the email HTML.
                 var body =
-                    $"<p>The roll for <strong>{ev.Name}</strong> has developed!</p>" +
+                    $"<p>The roll for <strong>{WebUtility.HtmlEncode(ev.Name)}</strong> has developed!</p>" +
                     $"<p><a href=\"{link}\">View the photos</a></p>";
 
                 foreach (var guest in guests)
