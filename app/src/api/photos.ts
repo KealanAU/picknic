@@ -1,7 +1,7 @@
 // Photo upload + reveal, over the http wrapper. Upload is a three-step handshake
 // so the API never proxies image bytes: createUpload (mint SAS) -> putBlob (PUT
 // straight to Azure) -> completeUpload (register the blob + caption).
-import { request } from './http';
+import { platformFetch, request } from './http';
 
 export interface UploadTarget {
   uploadUrl: string;
@@ -20,7 +20,7 @@ export async function putBlob(
   bytes: ArrayBuffer,
   mime = 'image/jpeg',
 ): Promise<void> {
-  const res = await fetch(uploadUrl, {
+  const res = await platformFetch(uploadUrl, {
     method: 'PUT',
     headers: {
       'x-ms-blob-type': 'BlockBlob',

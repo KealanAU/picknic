@@ -13,7 +13,7 @@ import {
   type HostEvent,
   type HostGuest,
 } from '../../api/hostEvents';
-import { isApiError } from '../../api/http';
+import { isApiError, platformFetch } from '../../api/http';
 import { t } from '../../theme/tokens';
 import HostGuestList from './HostGuestList.vue';
 import HostRollHeader from './HostRollHeader.vue';
@@ -210,7 +210,7 @@ async function shareInviteImage(imageUrl: string) {
   const nav = globalThis.navigator;
 
   try {
-    const blob = await (await fetch(imageUrl)).blob();
+    const blob = await (await platformFetch(imageUrl)).blob();
     const file = new File([blob], 'picknic-invite.svg', { type: 'image/svg+xml' });
     if (nav?.canShare?.({ files: [file] }) && nav.share) {
       await nav.share({

@@ -1,6 +1,13 @@
 import { apiUrl } from './config';
 import { getTokens, isExpired } from './tokens';
 
+// Lynx injects `fetch` into the bundle scope (tt.fetch). Under the rspeedy web
+// preview that binding has no working network bridge, while the real fetch on
+// globalThis does; prefer it and fall back to the injected one for native.
+export const platformFetch: typeof fetch = globalThis.fetch
+  ? globalThis.fetch.bind(globalThis)
+  : fetch;
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -96,7 +103,7 @@ export async function request<T = unknown>(
     const token = opts.token ?? (useAuth ? getTokens()?.accessToken : undefined);
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    return fetch(buildUrl(path, opts.query), {
+    return platformFetch(buildUrl(path, opts.query), {
       method: opts.method ?? (opts.body !== undefined ? 'POST' : 'GET'),
       headers,
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
