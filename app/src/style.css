@@ -102,6 +102,155 @@ html {
   min-height: 0;
 }
 
+/* Date picker. Styled with flat classes instead of inline :style objects:
+ * vue-lynx ships each inline-style binding as a whole object across the thread
+ * boundary on every patch, which made the 42-cell grid expensive. Class ops are
+ * plain strings resolved against this precompiled sheet. Values mirror
+ * src/theme/tokens.ts. No gap on pk-dp-root: the panel is a v-if child and its
+ * anchor node would get a phantom gap; the panel carries margin-top instead. */
+.pk-dp-root {
+  display: flex;
+  flex-direction: column;
+}
+.pk-dp-root--disabled {
+  opacity: 0.55;
+}
+.pk-dp-trigger {
+  min-height: 52px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #eadfce;
+  background-color: #ffffff;
+}
+.pk-dp-trigger--open {
+  border-color: #006eff;
+}
+.pk-dp-trigger-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pk-dp-kicker {
+  font-family: 'Founders Grotesk', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #8a8f98;
+}
+.pk-dp-value {
+  font-family: 'Founders Grotesk', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: #000000;
+}
+.pk-dp-icon-slot {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pk-dp-panel {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #eadfce;
+  background-color: #ffffff;
+}
+.pk-dp-panel-head {
+  min-height: 48px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: #eadfce;
+}
+.pk-dp-nav {
+  width: 40px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pk-dp-month {
+  font-family: 'Founders Grotesk', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: #000000;
+}
+.pk-dp-weekdays {
+  display: flex;
+  flex-direction: row;
+  padding: 8px 8px 0;
+}
+.pk-dp-weekday {
+  width: 14.2857%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+.pk-dp-weekday-text {
+  font-family: 'Founders Grotesk', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #8a8f98;
+}
+.pk-dp-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 0 8px 8px;
+}
+.pk-dp-day {
+  width: 14.2857%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  background-color: #ffffff;
+}
+.pk-dp-day--out {
+  background-color: #fffdf7;
+  opacity: 0.42;
+}
+/* After --out so a disabled out-of-month day keeps the stronger fade. */
+.pk-dp-day--disabled {
+  opacity: 0.35;
+}
+.pk-dp-day--between {
+  border-color: #e6f0ff;
+  background-color: #e6f0ff;
+}
+.pk-dp-day--selected {
+  border-color: #006eff;
+  background-color: #006eff;
+}
+.pk-dp-day-text {
+  font-family: 'Founders Grotesk', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: #000000;
+}
+.pk-dp-day-text--selected {
+  color: #ffffff;
+}
+
 /* vue-lynx has no <Transition> component, so we replay a CSS keyframe on a
  * changing :key instead. Lynx supports @keyframes natively, so this runs on device. */
 @keyframes pk-swap-from-right {

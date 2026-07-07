@@ -44,9 +44,9 @@ function messageFor(e: unknown): string {
   return isApiError(e) ? e.message : 'Request failed';
 }
 
-function windowFromPartyDate(partyDate: string) {
-  const opens = new Date(`${partyDate}T00:00:00`);
-  const closes = new Date(`${partyDate}T23:59:00`);
+function windowFromPartyDates(partyStart: string, partyEnd: string) {
+  const opens = new Date(`${partyStart}T00:00:00`);
+  const closes = new Date(`${partyEnd}T23:59:00`);
   const reveal = new Date(closes);
   reveal.setHours(reveal.getHours() + 1);
 
@@ -95,13 +95,13 @@ async function refreshAll() {
   }
 }
 
-async function saveSettings(payload: { name: string; partyDate: string }) {
+async function saveSettings(payload: { name: string; partyStart: string; partyEnd: string }) {
   busy.value = true;
   error.value = null;
   try {
     const body = {
       name: payload.name,
-      ...windowFromPartyDate(payload.partyDate),
+      ...windowFromPartyDates(payload.partyStart, payload.partyEnd),
     };
     if (latestEvent.value) await updateHostEvent(latestEvent.value.id, body);
     else await createHostEvent(body);
