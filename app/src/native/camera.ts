@@ -3,6 +3,10 @@
 // app/native/ios & app/native/android), so it's absent in Explorer/web preview.
 // Callers must check isCameraAvailable() and degrade.
 
+// Static import (not dynamic): lazy chunks load through Lynx's own chunk
+// loader, which is unreliable in the web preview.
+import { DEV_SAMPLE_JPEG_BASE64 } from './devSamplePhoto';
+
 export interface CaptureOptions {
   quality?: number; // JPEG quality 0..1, default 0.9
   facing?: 'front' | 'back';
@@ -65,7 +69,6 @@ export async function capturePhoto(options: CaptureOptions = {}): Promise<Captur
   const mod = cameraModule();
   if (!mod || typeof mod.capture !== 'function') {
     if (devFakeAvailable()) {
-      const { DEV_SAMPLE_JPEG_BASE64 } = await import('./devSamplePhoto');
       return {
         bytes: base64ToArrayBuffer(DEV_SAMPLE_JPEG_BASE64),
         width: 320,
