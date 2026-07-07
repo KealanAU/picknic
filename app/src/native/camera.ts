@@ -42,9 +42,16 @@ function cameraModule(): NativeCameraModule | null {
   }
 }
 
+// DEV-only stand-in: Explorer and the web preview have no CameraModule, so the
+// fake returns an embedded sample JPEG and the whole capture->upload flow stays
+// exercisable. Prod builds drop this branch with import.meta.env.DEV.
+function devFakeAvailable(): boolean {
+  return !!import.meta.env.DEV;
+}
+
 export function isCameraAvailable(): boolean {
   const mod = cameraModule();
-  return !!mod && typeof mod.capture === 'function';
+  return (!!mod && typeof mod.capture === 'function') || devFakeAvailable();
 }
 
 export class CameraCancelled extends Error {
@@ -57,6 +64,15 @@ export class CameraCancelled extends Error {
 export async function capturePhoto(options: CaptureOptions = {}): Promise<CapturedPhoto> {
   const mod = cameraModule();
   if (!mod || typeof mod.capture !== 'function') {
+    if (devFakeAvailable()) {
+      const { DEV_SAMPLE_JPEG_BASE64 } = await import('./devSamplePhoto');
+      return {
+        bytes: base64ToArrayBuffer(DEV_SAMPLE_JPEG_BASE64),
+        width: 320,
+        height: 280,
+        mime: 'image/jpeg',
+      };
+    }
     throw new Error('Camera is not available in this runtime.');
   }
 
