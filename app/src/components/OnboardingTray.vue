@@ -31,7 +31,7 @@ function resolveGuestEvent(payload: ResolvedGuestEvent, setView: (id: string) =>
     default-view="choose"
     keyboard-aware
     :ui="{
-      content: 'z-[1001] pk-onboarding-tray-surface pk-onboarding-tray-content',
+      content: 'z-[1001] pk-tray-radius pk-onboarding-tray-surface pk-onboarding-tray-content',
       morph: 'pk-onboarding-tray-surface pk-onboarding-tray-scroll-shell',
       viewport: 'pk-onboarding-tray-surface pk-onboarding-tray-scroll-shell',
       body: 'pk-onboarding-tray-surface pk-onboarding-tray-scroll-body',

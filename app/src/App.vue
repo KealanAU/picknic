@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
+import { OverlayRoot } from '@vyui/core';
 import { useAuth } from './composables/useAuth';
 import { useGuest } from './composables/useGuest';
 import AppBrand from './components/AppBrand.vue';
+import AppToaster from './components/AppToaster.vue';
 import GuestRoll from './components/GuestRoll.vue';
 import HostRoll from './components/host/HostRoll.vue';
 import OnboardingTray from './components/OnboardingTray.vue';
@@ -91,5 +93,11 @@ onMounted(() => {
 
       <OnboardingTray />
     </view>
+
+    <!-- Toast stack + the overlay outlet it renders through. ToastViewport
+         registers into vyui's overlay store; OverlayRoot is what paints it
+         (nothing else mounts one — trays draw their own fixed sheets). -->
+    <AppToaster />
+    <OverlayRoot />
   </view>
 </template>

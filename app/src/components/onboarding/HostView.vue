@@ -2,15 +2,17 @@
 import { computed, ref } from 'vue';
 import { VyButton, VyForm, VyFormField, VyIcon, VyInput, VyTrayView } from '@vyui/kit';
 import { useAuth } from '../../composables/useAuth';
+import { useToast } from '../../composables/useToast';
 import { sanitizeEmail } from '../../api/sanitize';
 import RememberMeToggle from '../RememberMeToggle.vue';
-import { backButtonStyle, errStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
+import { backButtonStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
 
 defineEmits<{
   back: [];
 }>();
 
 const { login, register, error: authError, isBusy: authBusy } = useAuth();
+const { toastError } = useToast();
 
 const mode = ref<'login' | 'register'>('login');
 const email = ref('');
@@ -37,6 +39,7 @@ async function submitHost() {
     if (mode.value === 'login') await login(email.value, password.value, rememberMe.value);
     else await register(email.value, password.value, rememberMe.value);
   } catch {
+    toastError(authError.value ?? 'Something went wrong. Try again.');
     return;
   }
 }
@@ -72,7 +75,7 @@ async function submitHost() {
           placeholder="you@example.com"
         />
       </VyFormField>
-      <VyFormField class="mt-2" label="Password" :hint="mode === 'register' ? 'At least 6 characters' : undefined">
+      <VyFormField class="mt-1" label="Password" :hint="mode === 'register' ? '6+ characters with upper & lower case, a number, and a symbol' : undefined">
         <VyInput
           v-model="password"
           :type="showPassword ? 'text' : 'password'"
@@ -87,10 +90,8 @@ async function submitHost() {
           </template>
         </VyInput>
       </VyFormField>
-      <RememberMeToggle v-model="rememberMe" size="sm" class="mt-2" />
+      <RememberMeToggle v-model="rememberMe" size="sm" class="mt-1" />
     </VyForm>
-
-    <text v-if="authError" :style="errStyle">{{ authError }}</text>
 
     <VyButton
       color="primary"

@@ -27,7 +27,7 @@ export const errStyle = {
 export const backButtonStyle = {
   alignSelf: 'flex-start',
   marginTop: '-8px',
-  marginBottom: '0px',
+  marginBottom: '10px',
 } as const;
 
 export const headerStyle = {

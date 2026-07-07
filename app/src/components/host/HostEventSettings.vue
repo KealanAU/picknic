@@ -54,7 +54,7 @@ function save() {
       <VyFormField label="Party name">
         <VyInput v-model="name" size="lg" autocomplete="off" placeholder="e.g. Sarah + Max" />
       </VyFormField>
-      <VyFormField class="mt-2" label="Party days">
+      <VyFormField class="mt-1" label="Party days">
         <DatePicker v-model:start="partyStart" v-model:end="partyEnd" :disabled="busy" />
       </VyFormField>
     </VyForm>

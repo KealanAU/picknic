@@ -8,6 +8,7 @@ import { VyButton, VyIcon, VyInput } from '@vyui/kit';
 import { isApiError } from '../api/http';
 import { completeUpload, createUpload, putBlob } from '../api/photos';
 import { useCamera } from '../composables/useCamera';
+import { useToast } from '../composables/useToast';
 import { toDataUri, type CapturedPhoto } from '../native/camera';
 import { t } from '../theme/tokens';
 import InstaxCard from './InstaxCard.vue';
@@ -24,18 +25,17 @@ const emit = defineEmits<{
 }>();
 
 const camera = useCamera();
+const { toastError } = useToast();
 
 const photo = ref<CapturedPhoto | null>(null);
 const caption = ref('');
 const uploadStage = ref<'idle' | 'requesting' | 'uploading' | 'finalizing'>('idle');
-const uploadError = ref<string | null>(null);
 const addedCount = ref(0);
 const justAdded = ref(false);
 
 const previewUri = computed(() => (photo.value ? toDataUri(photo.value) : undefined));
 const uploading = computed(() => uploadStage.value !== 'idle');
 const shutterReady = computed(() => camera.available && !camera.busy.value);
-const errorText = computed(() => uploadError.value ?? camera.error.value);
 
 function friendly(e: unknown): string {
   return isApiError(e) ? e.message : 'Something went wrong. Try again.';
@@ -44,11 +44,13 @@ function friendly(e: unknown): string {
 async function snap() {
   if (!shutterReady.value) return;
   justAdded.value = false;
-  uploadError.value = null;
   const shot = await camera.capture();
   if (shot) {
     photo.value = shot;
     caption.value = '';
+  } else if (camera.error.value) {
+    // capture() returns null on cancel too; only real failures set error.
+    toastError(camera.error.value);
   }
 }
 
@@ -56,13 +58,11 @@ function retake() {
   if (uploading.value) return;
   photo.value = null;
   caption.value = '';
-  uploadError.value = null;
 }
 
 async function addToRoll() {
   const shot = photo.value;
   if (!shot || uploading.value) return;
-  uploadError.value = null;
   try {
     uploadStage.value = 'requesting';
     const target = await createUpload(props.eventId, props.token);
@@ -76,7 +76,7 @@ async function addToRoll() {
     caption.value = '';
     emit('added');
   } catch (e) {
-    uploadError.value = friendly(e);
+    toastError(friendly(e));
   } finally {
     uploadStage.value = 'idle';
   }
@@ -140,13 +140,6 @@ async function addToRoll() {
         :style="{ marginTop: '14px', fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.blue }"
       >
         On the roll ✓
-      </text>
-
-      <text
-        v-if="errorText"
-        :style="{ marginTop: '14px', fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.danger, textAlign: 'center' }"
-      >
-        {{ errorText }}
       </text>
     </view>
 

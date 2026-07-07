@@ -74,7 +74,7 @@ const inviteImage = computed(() => {
     dismissible
     handle
     :ui="{
-      content: 'z-[1001] pk-onboarding-tray-surface',
+      content: 'z-[1001] pk-tray-radius pk-onboarding-tray-surface',
       morph: 'pk-onboarding-tray-surface',
       viewport: 'pk-onboarding-tray-surface',
       body: 'px-4 pb-5 pk-onboarding-tray-surface',

@@ -2,7 +2,8 @@
 import { computed, ref } from 'vue';
 import { VyButton, VyForm, VyFormField, VyInput, VyTrayView } from '@vyui/kit';
 import { useGuest } from '../../composables/useGuest';
-import { backButtonStyle, errStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
+import { useToast } from '../../composables/useToast';
+import { backButtonStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
 
 const props = defineProps<{
   code: string;
@@ -15,6 +16,7 @@ defineEmits<{
 }>();
 
 const { join, error: guestError } = useGuest();
+const { toastError } = useToast();
 
 const guestName = ref('');
 const joinBusy = ref(false);
@@ -27,6 +29,7 @@ async function submitJoin() {
   try {
     await join(props.code, guestName.value, props.secret); // success flips isJoined, closing the tray
   } catch {
+    toastError(guestError.value ?? 'Something went wrong. Try again.');
     return;
   } finally {
     joinBusy.value = false;
@@ -55,8 +58,6 @@ async function submitJoin() {
         <VyInput v-model="guestName" size="xl" autocomplete="name" placeholder="e.g. Alex" />
       </VyFormField>
     </VyForm>
-
-    <text v-if="guestError" :style="errStyle">{{ guestError }}</text>
 
     <VyButton
       color="primary"

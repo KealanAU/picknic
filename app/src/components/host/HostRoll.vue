@@ -16,6 +16,7 @@ import {
   type HostGuest,
 } from '../../api/hostEvents';
 import { isApiError, platformFetch } from '../../api/http';
+import { useToast } from '../../composables/useToast';
 import { t } from '../../theme/tokens';
 import CameraScreen from '../CameraScreen.vue';
 import PartyCodeCard from '../PartyCodeCard.vue';
@@ -31,10 +32,11 @@ const emit = defineEmits<{
   logout: [];
 }>();
 
+const { toastError } = useToast();
+
 const hostEvents = ref<HostEvent[]>([]);
 const guests = ref<HostGuest[]>([]);
 const qr = ref<EventQr | null>(null);
-const error = ref<string | null>(null);
 const busy = ref(false);
 const copied = ref(false);
 const shareTrayOpen = ref(false);
@@ -94,7 +96,7 @@ async function loadPartyDetails() {
   } catch (e) {
     qr.value = null;
     if (isApiError(e) && e.status === 409) {
-      error.value = e.message;
+      toastError(e.message);
       return;
     }
     throw e;
@@ -103,12 +105,11 @@ async function loadPartyDetails() {
 
 async function refreshAll() {
   busy.value = true;
-  error.value = null;
   try {
     await loadEvents();
     await loadPartyDetails();
   } catch (e) {
-    error.value = messageFor(e);
+    toastError(messageFor(e));
   } finally {
     busy.value = false;
   }
@@ -116,7 +117,6 @@ async function refreshAll() {
 
 async function saveSettings(payload: { name: string; partyStart: string; partyEnd: string }) {
   busy.value = true;
-  error.value = null;
   try {
     const body = {
       name: payload.name,
@@ -127,7 +127,7 @@ async function saveSettings(payload: { name: string; partyStart: string; partyEn
     await refreshAll();
     settingsTrayOpen.value = false;
   } catch (e) {
-    error.value = messageFor(e);
+    toastError(messageFor(e));
   } finally {
     busy.value = false;
   }
@@ -136,12 +136,11 @@ async function saveSettings(payload: { name: string; partyStart: string; partyEn
 async function refreshShare() {
   if (!latestEvent.value) return;
   busy.value = true;
-  error.value = null;
   try {
     qr.value = await getEventQr(latestEvent.value.id);
   } catch (e) {
     if (isApiError(e) && e.status === 409) qr.value = null;
-    error.value = messageFor(e);
+    toastError(messageFor(e));
   } finally {
     busy.value = false;
   }
@@ -150,11 +149,10 @@ async function refreshShare() {
 async function refreshGuests() {
   if (!latestEvent.value) return;
   busy.value = true;
-  error.value = null;
   try {
     guests.value = await listGuests(latestEvent.value.id);
   } catch (e) {
-    error.value = messageFor(e);
+    toastError(messageFor(e));
   } finally {
     busy.value = false;
   }
@@ -163,12 +161,11 @@ async function refreshGuests() {
 async function removePartyGuest(guest: HostGuest) {
   if (!latestEvent.value) return;
   busy.value = true;
-  error.value = null;
   try {
     await removeGuest(latestEvent.value.id, guest.id);
     await refreshGuests();
   } catch (e) {
-    error.value = messageFor(e);
+    toastError(messageFor(e));
   } finally {
     busy.value = false;
   }
@@ -177,12 +174,11 @@ async function removePartyGuest(guest: HostGuest) {
 async function copyShareLink() {
   if (!qr.value?.joinUrl) return;
   copied.value = false;
-  error.value = null;
   try {
     await copyText(qr.value.joinUrl);
     copied.value = true;
   } catch {
-    error.value = "Couldn't copy the link on this device. Try sharing it instead.";
+    toastError("Couldn't copy the link on this device. Try sharing it instead.");
   }
 }
 
@@ -224,7 +220,6 @@ function openExternal(url: string): void {
 
 async function shareInviteImage(imageUrl: string) {
   if (!qr.value?.joinUrl) return;
-  error.value = null;
   const text = shareText();
   const nav = globalThis.navigator;
 
@@ -250,7 +245,7 @@ async function shareInviteImage(imageUrl: string) {
     }
     openExternal(imageUrl);
   } catch {
-    error.value = "Sharing isn't available on this device. Copy the link instead.";
+    toastError("Sharing isn't available on this device. Copy the link instead.");
   }
 }
 
@@ -292,12 +287,11 @@ function openShareTray() {
 async function openCamera() {
   if (!latestEvent.value || busy.value) return;
   busy.value = true;
-  error.value = null;
   try {
     cameraPass.value = await getCameraPass(latestEvent.value.id);
     cameraOpen.value = true;
   } catch (e) {
-    error.value = messageFor(e);
+    toastError(messageFor(e));
   } finally {
     busy.value = false;
   }
@@ -330,10 +324,6 @@ onMounted(() => {
           settings
           @settings="settingsTrayOpen = true"
         />
-
-        <text v-if="error" :style="{ marginTop: '14px', fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.danger }">
-          {{ error }}
-        </text>
 
         <VyCard v-if="!latestEvent" :style="{ width: '100%', marginTop: '14px' }">
           <view :style="{ display: 'flex', flexDirection: 'column' }">

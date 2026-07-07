@@ -32,7 +32,7 @@ const emit = defineEmits<{
     handle
     keyboard-aware
     :ui="{
-      content: 'z-[1001] pk-onboarding-tray-surface',
+      content: 'z-[1001] pk-tray-radius pk-onboarding-tray-surface',
       morph: 'pk-onboarding-tray-surface',
       viewport: 'pk-onboarding-tray-surface',
       body: 'px-4 pb-5 pk-onboarding-tray-surface',
@@ -48,7 +48,7 @@ const emit = defineEmits<{
           {{ event ? 'Party settings' : 'Make a party' }}
         </text>
 
-        <view :style="{ marginTop: '14px' }">
+        <view :style="{ marginTop: '8px' }">
           <HostEventSettings :event="event" :busy="busy" @save="emit('save', $event)" />
         </view>
 

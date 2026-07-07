@@ -152,10 +152,7 @@ function dayTextClass(day: CalendarDay) {
 <template>
   <view :class="disabled ? 'pk-dp-root pk-dp-root--disabled' : 'pk-dp-root'">
     <view :class="open ? 'pk-dp-trigger pk-dp-trigger--open' : 'pk-dp-trigger'" @tap="toggle">
-      <view class="pk-dp-trigger-label">
-        <text class="pk-dp-kicker">Party days</text>
-        <text class="pk-dp-value">{{ rangeLabel }}</text>
-      </view>
+      <text class="pk-dp-value">{{ rangeLabel }}</text>
       <view class="pk-dp-icon-slot">
         <VyIcon name="streamline-freehand:calendar-grid" :style="{ color: open ? t.color.ink : t.color.blue }" />
       </view>

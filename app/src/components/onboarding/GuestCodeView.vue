@@ -2,7 +2,8 @@
 import { computed, ref } from 'vue';
 import { VyButton, VyForm, VyFormField, VyInput, VyTrayView } from '@vyui/kit';
 import { useGuest } from '../../composables/useGuest';
-import { backButtonStyle, errStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
+import { useToast } from '../../composables/useToast';
+import { backButtonStyle, headerStyle, primaryActionStyle, subStyle, titleStyle } from './styles';
 
 const emit = defineEmits<{
   back: [];
@@ -10,6 +11,7 @@ const emit = defineEmits<{
 }>();
 
 const { lookup, error: guestError } = useGuest();
+const { toastError } = useToast();
 
 const code = ref('');
 // Set only from a scanned QR deep link (future); a typed room code has no secret.
@@ -25,7 +27,7 @@ async function continueCode() {
     const ev = await lookup(code.value);
     emit('resolved', { code: code.value, eventName: ev.name, secret: secret.value });
   } catch {
-    // guestError set by lookup
+    toastError(guestError.value ?? 'Something went wrong. Try again.');
   } finally {
     codeBusy.value = false;
   }
@@ -59,8 +61,6 @@ async function continueCode() {
         />
       </VyFormField>
     </VyForm>
-
-    <text v-if="guestError" :style="errStyle">{{ guestError }}</text>
 
     <VyButton
       color="primary"
