@@ -50,7 +50,7 @@ async function submitJoin() {
       <text :style="subStyle">What should we call you on the roll?</text>
     </view>
 
-    <VyForm class="flex flex-col items-stretch w-full gap-2">
+    <VyForm class="flex flex-col items-stretch w-full">
       <VyFormField label="Your name">
         <VyInput v-model="guestName" size="xl" autocomplete="name" placeholder="e.g. Alex" />
       </VyFormField>

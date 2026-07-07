@@ -73,6 +73,8 @@ onMounted(() => {
       <GuestRoll :session="session" :style="{ width: '100%', height: '100%' }" @leave="leave" />
     </view>
 
+    <!-- No gap here: VyTray has a fragment root (its sheet renders as a bottom
+         overlay), so its anchor node would collect a phantom gap on native. -->
     <view
       v-else-if="appState === 'login'"
       :style="{
@@ -83,7 +85,6 @@ onMounted(() => {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '32px',
-        gap: '43px',
       }"
     >
       <AppBrand />

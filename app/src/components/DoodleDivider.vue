@@ -8,10 +8,13 @@ withDefaults(defineProps<{ label?: string; color?: string }>(), {
 </script>
 
 <template>
-  <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '11px' }">
+  <!-- Margin spacing instead of gap: the v-if label leaves a fragment anchor
+       that container gap would treat as a child when the label is absent. -->
+  <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }">
     <text
       v-if="label"
       :style="{
+        marginBottom: '11px',
         fontFamily: t.font.body,
         fontSize: '14px',
         fontWeight: '300',
