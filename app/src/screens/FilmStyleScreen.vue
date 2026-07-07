@@ -28,6 +28,10 @@ async function takePhoto() {
 
 function chipStyle(active: boolean) {
   return {
+    // Row/column spacing lives here, not as container gap: the v-for fragment
+    // anchors would collect phantom gaps on native.
+    marginTop: '8px',
+    marginRight: '8px',
     paddingLeft: '20px',
     paddingRight: '20px',
     paddingTop: '11px',
@@ -50,39 +54,33 @@ function chipTextStyle(active: boolean) {
   } as const;
 }
 
-const labelStyle = {
-  fontFamily: t.font.body,
-  fontSize: '14px',
-  fontWeight: '300' as const,
-  letterSpacing: t.tracking,
-  textTransform: 'uppercase' as const,
-  color: t.color.blue,
-} as const;
 </script>
 
 <template>
   <view :style="{ width: '100%', minHeight: '100vh', backgroundColor: t.color.paper }">
-    <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '29px', gap: '29px' }">
+    <!-- Margin spacing instead of gap: the v-if error texts and v-for chips
+         leave fragment anchors that container gap would treat as children. -->
+    <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '29px' }">
       <text :style="{ fontFamily: t.font.display, fontSize: '38px', fontWeight: '400', lineHeight: '1', letterSpacing: t.tracking, color: t.color.blue, textAlign: 'center' }">
         Choose your roll
       </text>
 
-      <PaperCard :padding="14">
+      <PaperCard :padding="14" :style="{ marginTop: '29px' }">
         <InstaxCard :src="previewUri" :caption="stockName" :print="print" :width="260" />
       </PaperCard>
 
-      <StickerButton :disabled="!available" @tap="takePhoto">
+      <StickerButton :disabled="!available" :style="{ marginTop: '29px' }" @tap="takePhoto">
         {{ busy ? 'Snapping…' : available ? '📸 Take a photo' : 'Camera unavailable' }}
       </StickerButton>
-      <text v-if="cameraError" :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.danger }">
+      <text v-if="cameraError" :style="{ marginTop: '29px', fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.danger }">
         {{ cameraError }}
       </text>
 
-      <DoodleDivider label="the frame" />
+      <DoodleDivider label="the frame" :style="{ marginTop: '29px' }" />
 
-      <view :style="{ width: '100%', gap: '10px' }">
-        <text :style="labelStyle">Print frame</text>
-        <view :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px' }">
+      <!-- Chips carry their own 8px top margin, so the section offsets are 21px. -->
+      <view :style="{ width: '100%', marginTop: '21px' }">
+        <view :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }">
           <view
             v-for="printOption in prints"
             :key="printOption.id"
@@ -94,17 +92,16 @@ const labelStyle = {
         </view>
       </view>
 
-      <DoodleDivider label="the stock" />
+      <DoodleDivider label="the stock" :style="{ marginTop: '29px' }" />
 
-      <view :style="{ width: '100%', gap: '10px' }">
-        <text :style="labelStyle">Film stock</text>
-        <text v-if="loading" :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }">
+      <view :style="{ width: '100%', marginTop: '21px' }">
+        <text v-if="loading" :style="{ marginTop: '8px', fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }">
           Loading…
         </text>
-        <text v-if="error" :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.danger }">
+        <text v-if="error" :style="{ marginTop: '8px', fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.danger }">
           {{ error }}
         </text>
-        <view :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px' }">
+        <view :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }">
           <view
             v-for="stockOption in stocks"
             :key="stockOption.id"
