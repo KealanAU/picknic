@@ -3,7 +3,7 @@ import { computed, onMounted } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { useGuest } from './composables/useGuest';
 import AppBrand from './components/AppBrand.vue';
-import GuestSessionCard from './components/GuestSessionCard.vue';
+import GuestRoll from './components/GuestRoll.vue';
 import HostRoll from './components/host/HostRoll.vue';
 import OnboardingTray from './components/OnboardingTray.vue';
 import { t } from './theme/tokens';
@@ -64,16 +64,13 @@ onMounted(() => {
     <view
       v-else-if="appState === 'guest'"
       :style="{
-        minHeight: '100vh',
+        height: '100vh',
         backgroundColor: t.color.cream,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px',
       }"
     >
-      <GuestSessionCard :session="session" @leave="leave" />
+      <GuestRoll :session="session" :style="{ width: '100%', height: '100%' }" @leave="leave" />
     </view>
 
     <view

@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { VyButton, VyCard } from '@vyui/kit';
+import { VyButton, VyCard, VyIcon } from '@vyui/kit';
 import type { AccountInfo } from '../../api/auth';
 import {
   createHostEvent,
+  getCameraPass,
   getEventQr,
   listGuests,
   listHostEvents,
   removeGuest,
   updateHostEvent,
+  type CameraPass,
   type EventQr,
   type HostEvent,
   type HostGuest,
 } from '../../api/hostEvents';
 import { isApiError, platformFetch } from '../../api/http';
 import { t } from '../../theme/tokens';
-import HostGuestList from './HostGuestList.vue';
-import HostRollHeader from './HostRollHeader.vue';
+import CameraScreen from '../CameraScreen.vue';
+import PartyCodeCard from '../PartyCodeCard.vue';
+import PartyHeader from '../PartyHeader.vue';
 import HostSettingsTray from './HostSettingsTray.vue';
-import HostShareCard from './HostShareCard.vue';
 import HostShareTray from './HostShareTray.vue';
 
 const props = defineProps<{
@@ -37,8 +39,25 @@ const busy = ref(false);
 const copied = ref(false);
 const shareTrayOpen = ref(false);
 const settingsTrayOpen = ref(false);
+const cameraOpen = ref(false);
+const cameraPass = ref<CameraPass | null>(null);
 
 const latestEvent = computed(() => hostEvents.value[0]);
+
+const dateLabel = computed(() => {
+  if (!latestEvent.value) return 'No party yet';
+  const opens = new Date(latestEvent.value.uploadOpensAt);
+  const closes = new Date(latestEvent.value.uploadClosesAt);
+  const singleDay =
+    opens.getFullYear() === closes.getFullYear() &&
+    opens.getMonth() === closes.getMonth() &&
+    opens.getDate() === closes.getDate();
+  if (singleDay) {
+    return opens.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+  const short: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+  return `${opens.toLocaleDateString(undefined, short)} – ${closes.toLocaleDateString(undefined, short)}`;
+});
 
 function messageFor(e: unknown): string {
   return isApiError(e) ? e.message : 'Request failed';
@@ -268,6 +287,27 @@ function openShareTray() {
   if (qr.value?.joinUrl) shareTrayOpen.value = true;
 }
 
+// The pass is idempotent server-side, so re-fetching on every open keeps the
+// token fresh without any persistence.
+async function openCamera() {
+  if (!latestEvent.value || busy.value) return;
+  busy.value = true;
+  error.value = null;
+  try {
+    cameraPass.value = await getCameraPass(latestEvent.value.id);
+    cameraOpen.value = true;
+  } catch (e) {
+    error.value = messageFor(e);
+  } finally {
+    busy.value = false;
+  }
+}
+
+function closeCamera() {
+  cameraOpen.value = false;
+  void refreshGuests();
+}
+
 watch(latestEvent, () => {
   void loadPartyDetails();
 });
@@ -280,36 +320,41 @@ onMounted(() => {
 <template>
   <view :style="{ width: '100%', height: '100%' }">
     <scroll-view scroll-orientation="vertical" :enable-scroll="true" :style="{ width: '100%', height: '100%' }">
-      <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px', padding: '24px 20px 40px' }">
-        <HostRollHeader :event="latestEvent" @settings="settingsTrayOpen = true" />
+      <!-- Children are conditional, so space them with margins: vue-lynx renders
+           v-if/v-for anchors as real nodes and container gap would double up. -->
+      <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', padding: '24px 20px 40px' }">
+        <PartyHeader
+          kicker="Your party"
+          :title="latestEvent?.name || 'New party'"
+          :date="dateLabel"
+          settings
+          @settings="settingsTrayOpen = true"
+        />
 
-        <text v-if="error" :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.danger }">
+        <text v-if="error" :style="{ marginTop: '14px', fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.danger }">
           {{ error }}
         </text>
 
-        <VyCard v-if="!latestEvent" :style="{ width: '100%' }">
-          <view :style="{ display: 'flex', flexDirection: 'column', gap: '12px' }">
+        <VyCard v-if="!latestEvent" :style="{ width: '100%', marginTop: '14px' }">
+          <view :style="{ display: 'flex', flexDirection: 'column' }">
             <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.muted }">
               Name it, date it, get your room code.
             </text>
-            <VyButton color="primary" size="lg" block @tap="settingsTrayOpen = true">
+            <VyButton color="primary" size="lg" block :style="{ marginTop: '12px' }" @tap="settingsTrayOpen = true">
               Set up the party
             </VyButton>
           </view>
         </VyCard>
 
-        <VyCard v-if="latestEvent" :style="{ width: '100%' }">
-          <HostShareCard
-            :event="latestEvent"
-            :qr="qr"
+        <VyCard v-if="latestEvent" :style="{ width: '100%', marginTop: '14px' }">
+          <PartyCodeCard
+            :code="latestEvent.code"
             :busy="busy"
+            show-share
+            :share-ready="!!qr?.joinUrl"
             @refresh="refreshShare"
             @share="openShareTray"
           />
-        </VyCard>
-
-        <VyCard v-if="latestEvent" :style="{ width: '100%' }">
-          <HostGuestList :guests="guests" :busy="busy" @refresh="refreshGuests" @remove="removePartyGuest" />
         </VyCard>
       </view>
     </scroll-view>
@@ -318,8 +363,11 @@ onMounted(() => {
       v-model:open="settingsTrayOpen"
       :event="latestEvent"
       :user="props.user"
+      :guests="guests"
       :busy="busy"
       @save="saveSettings"
+      @refresh-guests="refreshGuests"
+      @remove-guest="removePartyGuest"
       @logout="emit('logout')"
     />
 

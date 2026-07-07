@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { VyButton, VyTray } from '@vyui/kit';
 import type { AccountInfo } from '../../api/auth';
-import type { HostEvent } from '../../api/hostEvents';
+import type { HostEvent, HostGuest } from '../../api/hostEvents';
 import { t } from '../../theme/tokens';
 import HostEventSettings from './HostEventSettings.vue';
+import HostGuestList from './HostGuestList.vue';
 
 defineProps<{
   open?: boolean;
   event?: HostEvent;
   user: AccountInfo | null;
+  guests?: HostGuest[];
   busy?: boolean;
 }>();
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
   save: [payload: { name: string; partyDate: string }];
+  refreshGuests: [];
+  removeGuest: [guest: HostGuest];
   logout: [];
 }>();
 </script>
@@ -37,18 +41,32 @@ const emit = defineEmits<{
     @update:open="emit('update:open', $event)"
   >
     <template #default>
-      <view :style="{ display: 'flex', flexDirection: 'column', gap: '14px' }">
-        <view :style="{ alignSelf: 'center', width: '42px', height: '5px', borderRadius: t.radius.pill, backgroundColor: '#cbd3de' }" />
-
+      <!-- Margin spacing instead of gap: the v-if guest section leaves a fragment
+           anchor that container gap would treat as a child. -->
+      <view :style="{ display: 'flex', flexDirection: 'column' }">
         <text :style="{ fontFamily: t.font.display, fontSize: '26px', fontWeight: '300', lineHeight: '1.05', letterSpacing: t.tracking, color: t.color.ink }">
           {{ event ? 'Party settings' : 'Make a party' }}
         </text>
 
-        <HostEventSettings :event="event" :busy="busy" @save="emit('save', $event)" />
+        <view :style="{ marginTop: '14px' }">
+          <HostEventSettings :event="event" :busy="busy" @save="emit('save', $event)" />
+        </view>
 
-        <view :style="{ height: '1px', backgroundColor: t.color.line }" />
+        <view v-if="event" :style="{ marginTop: '14px' }">
+          <view :style="{ height: '1px', backgroundColor: t.color.line }" />
+          <view :style="{ marginTop: '14px' }">
+            <HostGuestList
+              :guests="guests ?? []"
+              :busy="busy"
+              @refresh="emit('refreshGuests')"
+              @remove="emit('removeGuest', $event)"
+            />
+          </view>
+        </view>
 
-        <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }">
+        <view :style="{ marginTop: '14px', height: '1px', backgroundColor: t.color.line }" />
+
+        <view :style="{ marginTop: '14px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }">
           <text :style="{ flex: 1, fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.tracking, color: t.color.muted }">
             {{ user?.email }}
           </text>
