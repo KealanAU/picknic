@@ -41,8 +41,19 @@ export interface HostGuest {
   displayName: string;
   email?: string;
   joinedAt: string;
+  isHost: boolean;
   removed: boolean;
   photos: number;
+}
+
+// The host's upload identity: a flagged guest row plus the same event-scoped
+// token guests get, so host shots ride the normal upload pipeline.
+export interface CameraPass {
+  guestId: string;
+  name: string;
+  token: string;
+  expiresAt: string;
+  eventId: string;
 }
 
 export function listHostEvents(): Promise<HostEvent[]> {
@@ -66,6 +77,12 @@ export function getEventQr(id: string): Promise<EventQr> {
 
 export function listGuests(eventId: string): Promise<HostGuest[]> {
   return request<HostGuest[]>(`/api/events/${encodeURIComponent(eventId)}/guests/`);
+}
+
+export function getCameraPass(eventId: string): Promise<CameraPass> {
+  return request<CameraPass>(`/api/events/${encodeURIComponent(eventId)}/camera-pass`, {
+    method: 'POST',
+  });
 }
 
 export function removeGuest(eventId: string, guestId: string): Promise<void> {

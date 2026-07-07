@@ -23,6 +23,7 @@ public static class GuestEndpoints
                     g.DisplayName,
                     g.Email,
                     g.JoinedAt,
+                    g.IsHost,
                     removed = g.RemovedAt != null,
                     photos = db.Photos.Count(p => p.UploadedByGuestId == g.Id),
                 })

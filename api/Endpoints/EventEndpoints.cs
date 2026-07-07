@@ -156,7 +156,8 @@ public static class EventEndpoints
                 return Results.Problem("Uploads are closed for this event.", statusCode: 403);
 
             var cap = PlanLimits.For(ev.Tier).MaxGuests;
-            var guestCount = await db.Guests.CountAsync(g => g.EventId == ev.Id && g.RemovedAt == null);
+            var guestCount = await db.Guests.CountAsync(
+                g => g.EventId == ev.Id && g.RemovedAt == null && !g.IsHost);
             if (guestCount >= cap)
                 return Results.Problem("This event has reached its guest limit.", statusCode: 403);
 
@@ -185,6 +186,43 @@ public static class EventEndpoints
         })
         .RequireRateLimiting("join")
         .WithName("JoinEvent");
+
+        // Mints the host an upload identity on their own event: a Guest row
+        // flagged IsHost plus the same event-scoped token guests get, so the
+        // host shoots through the untouched upload pipeline (SAS mint, blob
+        // path pinning, photo caps). Idempotent — reuses and restores the row.
+        group.MapPost("/{id:guid}/camera-pass", async (
+            Guid id, ClaimsPrincipal user, PicknicDbContext db, GuestTokenService tokens) =>
+        {
+            var hostId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ev = await db.Events.FindAsync(id);
+            if (ev is null) return Results.NotFound();
+            if (ev.HostId != hostId) return Results.Forbid();
+
+            var now = DateTimeOffset.UtcNow;
+            if (!ev.UploadOpen(now))
+                return Results.Problem("Uploads are closed for this party.", statusCode: 403);
+
+            var guest = await db.Guests.FirstOrDefaultAsync(g => g.EventId == id && g.IsHost);
+            if (guest is null)
+            {
+                guest = new Guest { EventId = id, DisplayName = "Host", IsHost = true };
+                db.Guests.Add(guest);
+            }
+            guest.RemovedAt = null;
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new
+            {
+                guestId = guest.Id,
+                name = guest.DisplayName,
+                token = tokens.Issue(id, guest.Id, ev.UploadClosesAt),
+                expiresAt = ev.UploadClosesAt,
+                eventId = id,
+            });
+        })
+        .RequireAuthorization("Host")
+        .WithName("CreateCameraPass");
 
         group.MapGet("/", async (ClaimsPrincipal user, PicknicDbContext db) =>
         {
