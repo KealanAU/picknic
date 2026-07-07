@@ -55,18 +55,28 @@ async function parse(res: Response): Promise<unknown> {
   }
 }
 
-function messageFor(status: number, payload: unknown): string {
+// Extracts a human message from an RFC-7807 problem+json payload
+// ({ title, detail?, status, errors? }), legacy { error } bodies, or plain text.
+export function problemMessage(payload: unknown): string | null {
   if (payload && typeof payload === 'object') {
     const p = payload as Record<string, unknown>;
-    if (typeof p.detail === 'string') return p.detail;
-    if (typeof p.title === 'string') return p.title;
     if (p.errors && typeof p.errors === 'object') {
-      const first = Object.values(p.errors as Record<string, unknown>)[0];
-      if (Array.isArray(first) && typeof first[0] === 'string') return first[0];
+      for (const messages of Object.values(p.errors as Record<string, unknown>)) {
+        if (Array.isArray(messages) && typeof messages[0] === 'string' && messages[0]) {
+          return messages[0];
+        }
+      }
     }
+    if (typeof p.detail === 'string' && p.detail) return p.detail;
+    if (typeof p.title === 'string' && p.title) return p.title;
+    if (typeof p.error === 'string' && p.error) return p.error;
   }
-  if (typeof payload === 'string' && payload) return payload;
-  return `Request failed (${status})`;
+  if (typeof payload === 'string' && payload.trim()) return payload.trim();
+  return null;
+}
+
+function messageFor(status: number, payload: unknown): string {
+  return problemMessage(payload) ?? `Request failed (${status})`;
 }
 
 export async function request<T = unknown>(
@@ -95,7 +105,6 @@ export async function request<T = unknown>(
 
   let res = await send();
 
-  // Token rejected mid-flight: refresh once and retry.
   if (res.status === 401 && useAuth && refreshHandler && getTokens()) {
     if (await refreshHandler()) res = await send();
   }

@@ -15,9 +15,11 @@ import {
 } from '../../api/hostEvents';
 import { isApiError } from '../../api/http';
 import { t } from '../../theme/tokens';
-import HostEventSettings from './HostEventSettings.vue';
 import HostGuestList from './HostGuestList.vue';
-import HostSharePanel from './HostSharePanel.vue';
+import HostRollHeader from './HostRollHeader.vue';
+import HostSettingsTray from './HostSettingsTray.vue';
+import HostShareCard from './HostShareCard.vue';
+import HostShareTray from './HostShareTray.vue';
 
 const props = defineProps<{
   user: AccountInfo | null;
@@ -33,6 +35,8 @@ const qr = ref<EventQr | null>(null);
 const error = ref<string | null>(null);
 const busy = ref(false);
 const copied = ref(false);
+const shareTrayOpen = ref(false);
+const settingsTrayOpen = ref(false);
 
 const latestEvent = computed(() => hostEvents.value[0]);
 
@@ -102,6 +106,7 @@ async function saveSettings(payload: { name: string; partyDate: string }) {
     if (latestEvent.value) await updateHostEvent(latestEvent.value.id, body);
     else await createHostEvent(body);
     await refreshAll();
+    settingsTrayOpen.value = false;
   } catch (e) {
     error.value = messageFor(e);
   } finally {
@@ -153,10 +158,114 @@ async function removePartyGuest(guest: HostGuest) {
 async function copyShareLink() {
   if (!qr.value?.joinUrl) return;
   copied.value = false;
+  error.value = null;
+  try {
+    await copyText(qr.value.joinUrl);
+    copied.value = true;
+  } catch {
+    error.value = 'Could not copy the link on this device. Select the link and copy it manually.';
+  }
+}
+
+async function copyText(value: string): Promise<void> {
   const clipboard = globalThis.navigator?.clipboard;
-  if (!clipboard) return;
-  await clipboard.writeText(qr.value.joinUrl);
-  copied.value = true;
+  if (clipboard) {
+    await clipboard.writeText(value);
+    return;
+  }
+
+  if (typeof document === 'undefined') throw new Error('Clipboard unavailable');
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(textarea);
+  if (!ok) throw new Error('Copy command failed');
+}
+
+function shareText() {
+  if (!latestEvent.value || !qr.value?.joinUrl) return '';
+  return `Join ${latestEvent.value.name} on Picknic. Room code: ${latestEvent.value.code} ${qr.value.joinUrl}`;
+}
+
+function openExternal(url: string): void {
+  const opener = (globalThis as typeof globalThis & { open?: (url?: string, target?: string, features?: string) => unknown }).open;
+  if (opener) {
+    opener(url, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  if (typeof window !== 'undefined') window.location.href = url;
+}
+
+async function shareInviteImage(imageUrl: string) {
+  if (!qr.value?.joinUrl) return;
+  error.value = null;
+  const text = shareText();
+  const nav = globalThis.navigator;
+
+  try {
+    const blob = await (await fetch(imageUrl)).blob();
+    const file = new File([blob], 'picknic-invite.svg', { type: 'image/svg+xml' });
+    if (nav?.canShare?.({ files: [file] }) && nav.share) {
+      await nav.share({
+        title: latestEvent.value?.name ?? 'Picknic invite',
+        text,
+        url: qr.value.joinUrl,
+        files: [file],
+      });
+      return;
+    }
+    if (nav?.share) {
+      await nav.share({
+        title: latestEvent.value?.name ?? 'Picknic invite',
+        text,
+        url: qr.value.joinUrl,
+      });
+      return;
+    }
+    openExternal(imageUrl);
+  } catch {
+    error.value = 'Sharing is not available on this device. The link is still ready to copy.';
+  }
+}
+
+type SharePlatform = 'messages' | 'whatsapp' | 'facebook' | 'messenger' | 'x' | 'snapchat' | 'threads';
+
+async function sharePlatform(platform: SharePlatform) {
+  if (!qr.value?.joinUrl) return;
+  const url = qr.value.joinUrl;
+  const text = shareText();
+
+  if (platform === 'snapchat') {
+    try {
+      await copyText(text);
+      copied.value = true;
+    } catch {
+      // Snapchat does not expose a reliable web prefill target; keep the link copied.
+    }
+    openExternal('https://www.snapchat.com/');
+    return;
+  }
+
+  const targets = {
+    messages: `sms:&body=${encodeURIComponent(text)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(text)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    messenger: `fb-messenger://share?link=${encodeURIComponent(url)}`,
+    x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+    threads: `https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`,
+  };
+  openExternal(targets[platform]);
+}
+
+function openShareTray() {
+  if (qr.value?.joinUrl) shareTrayOpen.value = true;
 }
 
 watch(latestEvent, () => {
@@ -169,40 +278,60 @@ onMounted(() => {
 </script>
 
 <template>
-  <scroll-view :style="{ width: '100%', height: '100%' }">
-    <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '32px' }">
-      <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px' }">
-        <view :style="{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }">
-          <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
-            Host roll
-          </text>
-          <text :style="{ fontFamily: t.font.display, fontSize: '34px', fontWeight: '300', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">
-            {{ latestEvent?.name || 'New party' }}
-          </text>
-          <text :style="{ fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.tracking, color: t.color.muted }">
-            {{ props.user?.email }}
-          </text>
-        </view>
-        <VyButton size="sm" variant="ghost" @click="emit('logout')">
-          Log out
-        </VyButton>
+  <view :style="{ width: '100%', height: '100%' }">
+    <scroll-view scroll-orientation="vertical" :enable-scroll="true" :style="{ width: '100%', height: '100%' }">
+      <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px', padding: '24px 20px 40px' }">
+        <HostRollHeader :event="latestEvent" @settings="settingsTrayOpen = true" />
+
+        <text v-if="error" :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.danger }">
+          {{ error }}
+        </text>
+
+        <VyCard v-if="!latestEvent" :style="{ width: '100%' }">
+          <view :style="{ display: 'flex', flexDirection: 'column', gap: '12px' }">
+            <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.muted }">
+              Name it, date it, get your room code.
+            </text>
+            <VyButton color="primary" size="lg" block @tap="settingsTrayOpen = true">
+              Set up the party
+            </VyButton>
+          </view>
+        </VyCard>
+
+        <VyCard v-if="latestEvent" :style="{ width: '100%' }">
+          <HostShareCard
+            :event="latestEvent"
+            :qr="qr"
+            :busy="busy"
+            @refresh="refreshShare"
+            @share="openShareTray"
+          />
+        </VyCard>
+
+        <VyCard v-if="latestEvent" :style="{ width: '100%' }">
+          <HostGuestList :guests="guests" :busy="busy" @refresh="refreshGuests" @remove="removePartyGuest" />
+        </VyCard>
       </view>
+    </scroll-view>
 
-      <text v-if="error" :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.danger }">
-        {{ error }}
-      </text>
+    <HostSettingsTray
+      v-model:open="settingsTrayOpen"
+      :event="latestEvent"
+      :user="props.user"
+      :busy="busy"
+      @save="saveSettings"
+      @logout="emit('logout')"
+    />
 
-      <VyCard :style="{ width: '100%' }">
-        <HostEventSettings :event="latestEvent" :busy="busy" @save="saveSettings" />
-      </VyCard>
-
-      <VyCard v-if="latestEvent" :style="{ width: '100%' }">
-        <HostSharePanel :event="latestEvent" :qr="qr" :busy="busy" :copied="copied" @refresh="refreshShare" @copy="copyShareLink" />
-      </VyCard>
-
-      <VyCard v-if="latestEvent" :style="{ width: '100%' }">
-        <HostGuestList :guests="guests" :busy="busy" @refresh="refreshGuests" @remove="removePartyGuest" />
-      </VyCard>
-    </view>
-  </scroll-view>
+    <HostShareTray
+      v-if="latestEvent && qr?.joinUrl"
+      v-model:open="shareTrayOpen"
+      :event="latestEvent"
+      :qr="qr"
+      :copied="copied"
+      @copy="copyShareLink"
+      @share-image="shareInviteImage"
+      @share-platform="sharePlatform"
+    />
+  </view>
 </template>

@@ -15,7 +15,6 @@ export function createUpload(eventId: string, guestToken: string): Promise<Uploa
   });
 }
 
-// PUTs straight to Azure blob storage, not our API.
 export async function putBlob(
   uploadUrl: string,
   bytes: ArrayBuffer,

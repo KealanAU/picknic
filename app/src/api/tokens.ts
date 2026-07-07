@@ -9,6 +9,7 @@ export interface TokenSet {
 const KEY = 'picknic.auth.tokens';
 
 let current: TokenSet | null = null;
+let currentRemember = false;
 
 export function getTokens(): TokenSet | null {
   return current;
@@ -23,18 +24,23 @@ export async function loadTokens(): Promise<TokenSet | null> {
   if (!raw) return null;
   try {
     current = JSON.parse(raw) as TokenSet;
+    currentRemember = true;
   } catch {
     current = null;
+    currentRemember = false;
   }
   return current;
 }
 
-export async function saveTokens(tokens: TokenSet): Promise<void> {
+export async function saveTokens(tokens: TokenSet, remember = currentRemember): Promise<void> {
   current = tokens;
-  await storage.setItem(KEY, JSON.stringify(tokens));
+  currentRemember = remember;
+  if (remember) await storage.setItem(KEY, JSON.stringify(tokens));
+  else await storage.removeItem(KEY);
 }
 
 export async function clearTokens(): Promise<void> {
   current = null;
+  currentRemember = false;
   await storage.removeItem(KEY);
 }

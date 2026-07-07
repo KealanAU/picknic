@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { VyButton, VyCard } from '@vyui/kit';
+import { computed, onMounted } from 'vue';
 import { useAuth } from './composables/useAuth';
 import { useGuest } from './composables/useGuest';
+import AppBrand from './components/AppBrand.vue';
+import GuestSessionCard from './components/GuestSessionCard.vue';
 import HostRoll from './components/host/HostRoll.vue';
 import OnboardingTray from './components/OnboardingTray.vue';
 import { t } from './theme/tokens';
 
 const { user, status, isAuthenticated, logout } = useAuth();
-const { session, isJoined, leave } = useGuest();
+const { session, isJoined, isReady: guestReady, leave } = useGuest();
+
+const appState = computed<'loading' | 'host' | 'guest' | 'login'>(() => {
+  const authReady = status.value === 'authenticated' || status.value === 'unauthenticated';
+  if (!authReady || !guestReady.value) return 'loading';
+  if (isAuthenticated.value) return 'host';
+  if (isJoined.value) return 'guest';
+  return 'login';
+});
 
 onMounted(() => {
   useAuth().initialize();
@@ -17,75 +26,72 @@ onMounted(() => {
 </script>
 
 <template>
-  <view :style="{ width: '100%', minHeight: '100vh', height: '100%', backgroundColor: t.color.cream }">
+  <view :style="{ width: '100%', minHeight: '100vh', backgroundColor: t.color.cream }">
     <view
+      v-if="appState === 'loading'"
       :style="{
-        height: '100%',
         minHeight: '100vh',
         backgroundColor: t.color.cream,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: isAuthenticated ? 'flex-start' : 'center',
+        justifyContent: 'center',
         padding: '32px',
-        gap: isAuthenticated ? '18px' : '43px',
+        gap: '24px',
       }"
     >
-      <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '11px' }">
-        <text
-          :style="{
-            fontFamily: t.font.display,
-            fontSize: '62px',
-            fontWeight: '400',
-            lineHeight: '1.2',
-            paddingTop: '8px',
-            letterSpacing: t.tracking,
-            color: t.color.blue,
-          }"
-        >
-          Picknic
-        </text>
-        <text
-          :style="{
-            fontFamily: t.font.body,
-            fontSize: '14px',
-            fontWeight: '300',
-            letterSpacing: t.tracking,
-            textTransform: 'uppercase',
-            color: t.color.blue,
-          }"
-        >
-          One roll · revealed at the end
-        </text>
-      </view>
+      <AppBrand />
 
       <text
-        v-if="status === 'idle' || status === 'loading'"
         :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted }"
       >
         Loading…
       </text>
-
-      <HostRoll v-else-if="isAuthenticated" :user="user" :style="{ flex: 1, minHeight: 0 }" @logout="logout" />
-
-      <VyCard v-else-if="isJoined" :style="{ width: '100%' }">
-        <text
-          :style="{ fontFamily: t.font.display, fontSize: '28px', fontWeight: '400', letterSpacing: t.tracking, color: t.color.ink }"
-        >
-          You're on the roll
-        </text>
-        <text
-          :style="{ fontFamily: t.font.body, fontSize: '16px', letterSpacing: t.tracking, color: t.color.muted, marginTop: '7px' }"
-        >
-          {{ session?.name }} · room {{ session?.code }}
-        </text>
-        <VyButton variant="soft" block :style="{ marginTop: '20px' }" @click="leave">
-          Leave roll
-        </VyButton>
-      </VyCard>
     </view>
 
-    <!-- Gates the app until a host signs in or a guest joins; self-manages its open state. -->
-    <OnboardingTray />
+    <view
+      v-else-if="appState === 'host'"
+      :style="{
+        height: '100vh',
+        backgroundColor: t.color.cream,
+        display: 'flex',
+        flexDirection: 'column',
+      }"
+    >
+      <HostRoll :user="user" :style="{ width: '100%', height: '100%' }" @logout="logout" />
+    </view>
+
+    <view
+      v-else-if="appState === 'guest'"
+      :style="{
+        minHeight: '100vh',
+        backgroundColor: t.color.cream,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px',
+      }"
+    >
+      <GuestSessionCard :session="session" @leave="leave" />
+    </view>
+
+    <view
+      v-else-if="appState === 'login'"
+      :style="{
+        minHeight: '100vh',
+        backgroundColor: t.color.cream,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px',
+        gap: '43px',
+      }"
+    >
+      <AppBrand />
+
+      <OnboardingTray />
+    </view>
   </view>
 </template>

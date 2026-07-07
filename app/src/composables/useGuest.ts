@@ -3,7 +3,7 @@
 import { computed, reactive } from 'vue';
 import { getEvent, joinEvent, type PublicEvent } from '../api/events';
 import { clearGuest, guestValid, loadGuest, saveGuest, type GuestSession } from '../api/guest';
-import { isApiError } from '../api/http';
+import { isApiError, problemMessage } from '../api/http';
 
 type Status = 'idle' | 'loading' | 'joined' | 'none';
 
@@ -15,9 +15,11 @@ const state = reactive({
 
 function friendly(e: unknown): string {
   if (isApiError(e)) {
+    // 404/401/429 come back as bare problems (boilerplate title only), so keep
+    // friendly text; 403 carries a server detail (uploads closed / guest limit).
     if (e.status === 404) return "That event code doesn't exist.";
     if (e.status === 401) return 'That join link is invalid — ask the host for the QR.';
-    if (e.status === 403) return 'Uploads are closed for this event.';
+    if (e.status === 403) return problemMessage(e.problem) ?? 'Uploads are closed for this event.';
     if (e.status === 429) return 'Too many attempts. Give it a minute.';
     return e.message;
   }

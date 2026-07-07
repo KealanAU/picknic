@@ -15,10 +15,10 @@ defineEmits<{
       <text :style="subStyle">One roll, revealed at the end.</text>
     </view>
     <view :style="{ display: 'flex', flexDirection: 'column', gap: '10px' }">
-      <VyButton color="primary" size="xl" block leading-icon="lucide:ticket" @click="$emit('guest')">
+      <VyButton color="primary" size="xl" block leading-icon="lucide:ticket" @tap="$emit('guest')">
         Join an event
       </VyButton>
-      <VyButton variant="outline" size="xl" block leading-icon="lucide:calendar-plus" @click="$emit('host')">
+      <VyButton variant="outline" size="xl" block leading-icon="lucide:calendar-plus" @tap="$emit('host')">
         Host an event
       </VyButton>
     </view>

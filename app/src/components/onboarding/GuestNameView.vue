@@ -27,7 +27,7 @@ async function submitJoin() {
   try {
     await join(props.code, guestName.value, props.secret); // success flips isJoined, closing the tray
   } catch {
-    // error surfaced via guestError
+    return;
   } finally {
     joinBusy.value = false;
   }
@@ -41,7 +41,7 @@ async function submitJoin() {
       size="sm"
       leading-icon="lucide:arrow-left"
       :style="backButtonStyle"
-      @click="$emit('back')"
+      @tap="$emit('back')"
     >
       Back
     </VyButton>
@@ -66,7 +66,7 @@ async function submitJoin() {
       :loading="joinBusy"
       :disabled="!canJoin"
       :style="primaryActionStyle"
-      @click="submitJoin"
+      @tap="submitJoin"
     >
       Join &amp; start snapping
     </VyButton>

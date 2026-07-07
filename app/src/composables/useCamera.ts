@@ -27,7 +27,7 @@ export function useCamera() {
       lastPhoto.value = photo;
       return photo;
     } catch (e) {
-      if (e instanceof CameraCancelled) return null; // user backed out, not an error
+      if (e instanceof CameraCancelled) return null;
       error.value = e instanceof Error ? e.message : String(e);
       return null;
     } finally {

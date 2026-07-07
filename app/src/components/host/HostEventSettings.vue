@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { VyButton, VyForm, VyFormField, VyInput } from '@vyui/kit';
 import type { HostEvent } from '../../api/hostEvents';
-import { t } from '../../theme/tokens';
+import DatePicker from '../DatePicker.vue';
 
 const props = defineProps<{
   event?: HostEvent;
@@ -13,7 +13,7 @@ const emit = defineEmits<{
   save: [payload: { name: string; partyDate: string }];
 }>();
 
-const name = ref('Local Test Roll');
+const name = ref('');
 const partyDate = ref(new Date().toISOString().slice(0, 10));
 
 watch(
@@ -36,26 +36,17 @@ function save() {
 
 <template>
   <view :style="{ display: 'flex', flexDirection: 'column', gap: '10px' }">
-    <view :style="{ display: 'flex', flexDirection: 'column', gap: '3px' }">
-      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
-        Party settings
-      </text>
-      <text :style="{ fontFamily: t.font.display, fontSize: '28px', fontWeight: '300', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">
-        {{ event ? 'Edit party' : 'Make a party' }}
-      </text>
-    </view>
-
     <VyForm class="flex flex-col items-stretch w-full gap-2">
       <VyFormField label="Party name">
         <VyInput v-model="name" size="lg" autocomplete="off" placeholder="e.g. Sarah + Max" />
       </VyFormField>
-      <VyFormField label="Party date" hint="YYYY-MM-DD">
-        <VyInput v-model="partyDate" size="lg" autocomplete="off" placeholder="2026-07-05" />
+      <VyFormField label="Party date">
+        <DatePicker v-model="partyDate" :disabled="busy" />
       </VyFormField>
     </VyForm>
 
-    <VyButton color="primary" size="lg" block :loading="busy" :disabled="!canSave" @click="save">
-      {{ event ? 'Save settings' : 'Create party' }}
+    <VyButton color="primary" size="lg" block :loading="busy" :disabled="!canSave" @tap="save">
+      {{ event ? 'Save' : 'Create party' }}
     </VyButton>
   </view>
 </template>

@@ -8,6 +8,7 @@ import {
   saveTokens,
   type TokenSet,
 } from './tokens';
+import { sanitizeEmail } from './sanitize';
 
 interface AccessTokenResponse {
   tokenType: string;
@@ -21,25 +22,25 @@ export interface AccountInfo {
   isEmailConfirmed: boolean;
 }
 
-function store(res: AccessTokenResponse): Promise<void> {
+function store(res: AccessTokenResponse, remember?: boolean): Promise<void> {
   const tokens: TokenSet = {
     accessToken: res.accessToken,
     refreshToken: res.refreshToken,
     expiresAt: Date.now() + res.expiresIn * 1000,
   };
-  return saveTokens(tokens);
+  return saveTokens(tokens, remember);
 }
 
 export function register(email: string, password: string): Promise<void> {
-  return request('/api/auth/register', { auth: false, body: { email: email.trim(), password } });
+  return request('/api/auth/register', { auth: false, body: { email: sanitizeEmail(email), password } });
 }
 
-export async function login(email: string, password: string): Promise<void> {
+export async function login(email: string, password: string, remember = true): Promise<void> {
   const res = await request<AccessTokenResponse>('/api/auth/login', {
     auth: false,
-    body: { email: email.trim(), password },
+    body: { email: sanitizeEmail(email), password },
   });
-  await store(res);
+  await store(res, remember);
 }
 
 export async function refreshTokens(): Promise<boolean> {
@@ -67,11 +68,16 @@ export function updateAccount(changes: {
   newPassword?: string;
   oldPassword?: string;
 }): Promise<AccountInfo> {
-  return request<AccountInfo>('/api/auth/manage/info', { body: changes });
+  return request<AccountInfo>('/api/auth/manage/info', {
+    body: {
+      ...changes,
+      newEmail: changes.newEmail === undefined ? undefined : sanitizeEmail(changes.newEmail),
+    },
+  });
 }
 
 export function forgotPassword(email: string): Promise<void> {
-  return request('/api/auth/forgotPassword', { auth: false, body: { email: email.trim() } });
+  return request('/api/auth/forgotPassword', { auth: false, body: { email: sanitizeEmail(email) } });
 }
 
 export function resetPassword(
@@ -81,7 +87,7 @@ export function resetPassword(
 ): Promise<void> {
   return request('/api/auth/resetPassword', {
     auth: false,
-    body: { email: email.trim(), resetCode, newPassword },
+    body: { email: sanitizeEmail(email), resetCode, newPassword },
   });
 }
 

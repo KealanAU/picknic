@@ -39,6 +39,10 @@ cd app
 pnpm install
 pnpm dev   # scan with the Lynx Explorer app
 ```
+In development the app targets a local API on port `8080`. When opened from a
+device QR, it reuses the dev bundle host so the device calls your machine's LAN
+IP instead of its own `localhost`. To force a specific API host, create
+`app/.env.local` with `PUBLIC_API_BASE=http://<host>:8080`.
 
 ### Everything via Docker
 ```bash
@@ -49,6 +53,11 @@ full photo upload → gallery flow works locally with no Azure account. The API
 signs account-key SAS against Azurite in dev and switches to managed-identity
 user-delegation SAS in production automatically. Event Grid isn't emulated —
 locally, photos register via the `/uploads/complete` client callback instead.
+
+If the API logs `Access to the path '/home/app/.aspnet/DataProtection-Keys/...'
+is denied`, rebuild the compose stack so the `dpkeys-init` helper can repair the
+named volume permissions. If the volume was created by an older stack and still
+fails, remove it once with `docker volume rm picknic_dpkeys`, then rebuild.
 
 ## Payments (Stripe)
 

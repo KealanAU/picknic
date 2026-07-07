@@ -61,7 +61,7 @@ const labelStyle = {
 </script>
 
 <template>
-  <scroll-view :style="{ width: '100%', height: '100%', backgroundColor: t.color.paper }">
+  <view :style="{ width: '100%', minHeight: '100vh', backgroundColor: t.color.paper }">
     <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '29px', gap: '29px' }">
       <text :style="{ fontFamily: t.font.display, fontSize: '38px', fontWeight: '400', lineHeight: '1', letterSpacing: t.tracking, color: t.color.blue, textAlign: 'center' }">
         Choose your roll
@@ -116,5 +116,5 @@ const labelStyle = {
         </view>
       </view>
     </view>
-  </scroll-view>
+  </view>
 </template>

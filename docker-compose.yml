@@ -28,6 +28,13 @@ services:
     volumes:
       - azurite:/data
 
+  dpkeys-init:
+    image: mcr.microsoft.com/dotnet/aspnet:10.0
+    user: root
+    command: sh -c 'mkdir -p /keys && chown -R 1654:1654 /keys'
+    volumes:
+      - dpkeys:/keys
+
   api:
     build: ./api
     ports:
@@ -48,6 +55,8 @@ services:
     volumes:
       - dpkeys:/home/app/.aspnet/DataProtection-Keys
     depends_on:
+      dpkeys-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
       azurite:

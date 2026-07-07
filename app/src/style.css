@@ -8,6 +8,12 @@
 page,
 body {
   background-color: #fff8f1 !important;
+  margin: 0;
+  min-height: 100%;
+}
+
+html {
+  min-height: 100%;
 }
 
 /* Resolve Comico from a host app first; the file fallback is inlined by Rspeedy
@@ -64,6 +70,36 @@ body {
 .dark {
   --ui-primary: var(--ui-color-primary-400);
   --ui-secondary: var(--ui-color-primary-300);
+}
+
+.pk-onboarding-tray-surface {
+  background-color: #fff8f1;
+  border-color: #fff8f1;
+}
+
+.pk-onboarding-tray-content {
+  max-height: calc(100vh - 32px);
+}
+
+.pk-onboarding-tray-scroll-shell {
+  min-height: 0;
+  max-height: calc(100vh - 32px);
+}
+
+.pk-onboarding-tray-scroll-body {
+  min-height: 0;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.pk-onboarding-scroll-view {
+  min-height: 0;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.pk-onboarding-scroll-content {
+  min-height: 0;
 }
 
 /* vue-lynx has no <Transition> component, so we replay a CSS keyframe on a

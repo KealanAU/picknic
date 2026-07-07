@@ -53,8 +53,11 @@ export function createHostEvent(input: CreateHostEventRequest): Promise<CreatedH
   return request<CreatedHostEvent>('/api/events/', { body: input });
 }
 
-export function updateHostEvent(id: string, input: CreateHostEventRequest): Promise<HostEvent> {
-  return request<HostEvent>(`/api/events/${encodeURIComponent(id)}`, { method: 'PUT', body: input });
+// The PUT response omits the guest/photo counts returned by the list endpoint.
+export type UpdatedHostEvent = Omit<HostEvent, 'guestCount' | 'photoCount'>;
+
+export function updateHostEvent(id: string, input: CreateHostEventRequest): Promise<UpdatedHostEvent> {
+  return request<UpdatedHostEvent>(`/api/events/${encodeURIComponent(id)}`, { method: 'PUT', body: input });
 }
 
 export function getEventQr(id: string): Promise<EventQr> {

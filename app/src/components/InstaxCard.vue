@@ -14,18 +14,19 @@ const props = withDefaults(
 );
 
 interface Layout {
-  aspect: number; // photo window w/h
+  windowAspect: number;
+  // Borders as fractions of card width.
   side: number;
   top: number;
-  bottom: number; // fractions of card width
+  bottom: number;
 }
 
 const LAYOUTS: Record<string, Layout> = {
-  none: { aspect: 1, side: 0, top: 0, bottom: 0 },
-  polaroid: { aspect: 1, side: 0.05, top: 0.05, bottom: 0.2 },
-  instax_mini: { aspect: 46 / 62, side: 0.07, top: 0.07, bottom: 0.2 },
-  instax_square: { aspect: 1, side: 0.07, top: 0.07, bottom: 0.2 },
-  instax_wide: { aspect: 99 / 62, side: 0.05, top: 0.05, bottom: 0.16 },
+  none: { windowAspect: 1, side: 0, top: 0, bottom: 0 },
+  polaroid: { windowAspect: 1, side: 0.05, top: 0.05, bottom: 0.2 },
+  instax_mini: { windowAspect: 46 / 62, side: 0.07, top: 0.07, bottom: 0.2 },
+  instax_square: { windowAspect: 1, side: 0.07, top: 0.07, bottom: 0.2 },
+  instax_wide: { windowAspect: 99 / 62, side: 0.05, top: 0.05, bottom: 0.16 },
 };
 
 const layout = computed(() => LAYOUTS[props.print] ?? LAYOUTS.polaroid);
@@ -35,7 +36,7 @@ const side = computed(() => Math.round(props.width * layout.value.side));
 const top = computed(() => Math.round(props.width * layout.value.top));
 const bottom = computed(() => Math.round(props.width * layout.value.bottom));
 const windowW = computed(() => props.width - 2 * side.value);
-const windowH = computed(() => Math.round(windowW.value / layout.value.aspect));
+const windowH = computed(() => Math.round(windowW.value / layout.value.windowAspect));
 
 const cardStyle = computed(() => ({
   width: `${props.width}px`,

@@ -39,7 +39,7 @@ async function continueCode() {
       size="sm"
       leading-icon="lucide:arrow-left"
       :style="backButtonStyle"
-      @click="$emit('back')"
+      @tap="$emit('back')"
     >
       Back
     </VyButton>
@@ -69,7 +69,7 @@ async function continueCode() {
       :loading="codeBusy"
       :disabled="!canContinueCode"
       :style="primaryActionStyle"
-      @click="continueCode"
+      @tap="continueCode"
     >
       Continue
     </VyButton>
