@@ -51,10 +51,10 @@ function save() {
        margins on the field roots instead. -->
   <view :style="{ display: 'flex', flexDirection: 'column' }">
     <VyForm class="flex flex-col items-stretch w-full">
-      <VyFormField label="Party name">
+      <VyFormField name="partyName" label="Party name">
         <VyInput v-model="name" size="lg" autocomplete="off" placeholder="e.g. Sarah + Max" />
       </VyFormField>
-      <VyFormField class="mt-1" label="Party days">
+      <VyFormField name="partyDays" class="mt-1" label="Party days">
         <DatePicker v-model:start="partyStart" v-model:end="partyEnd" :disabled="busy" />
       </VyFormField>
     </VyForm>

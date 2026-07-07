@@ -124,5 +124,7 @@ registerIconSet('brand', {
 });
 
 const app = createApp(App);
-provideVyUI(app, vyuiConfig);
+// vue-lynx's app object is a structural subset of Vue's App; provideVyUI only
+// touches app.provide, which it has.
+provideVyUI(app as unknown as Parameters<typeof provideVyUI>[0], vyuiConfig);
 app.mount();

@@ -54,7 +54,7 @@ async function submitJoin() {
     </view>
 
     <VyForm class="flex flex-col items-stretch w-full">
-      <VyFormField label="Your name">
+      <VyFormField name="guestName" label="Your name">
         <VyInput v-model="guestName" size="xl" autocomplete="name" placeholder="e.g. Alex" />
       </VyFormField>
     </VyForm>

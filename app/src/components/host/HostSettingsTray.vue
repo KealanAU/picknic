@@ -16,7 +16,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
-  save: [payload: { name: string; partyDate: string }];
+  save: [payload: { name: string; partyStart: string; partyEnd: string }];
   refreshGuests: [];
   removeGuest: [guest: HostGuest];
   logout: [];

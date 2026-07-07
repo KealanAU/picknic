@@ -51,7 +51,7 @@ async function continueCode() {
     </view>
 
     <VyForm class="flex flex-col items-stretch w-full">
-      <VyFormField label="Party code">
+      <VyFormField name="partyCode" label="Party code">
         <VyInput
           v-model="code"
           size="xl"

@@ -65,7 +65,7 @@ async function submitHost() {
          become real flex items on native and collect phantom gaps; space with
          margins on the field roots instead. -->
     <VyForm class="flex flex-col items-stretch w-full">
-      <VyFormField label="Email">
+      <VyFormField name="email" label="Email">
         <VyInput
           v-model="emailInput"
           type="email"
@@ -75,7 +75,7 @@ async function submitHost() {
           placeholder="you@example.com"
         />
       </VyFormField>
-      <VyFormField class="mt-1" label="Password" :hint="mode === 'register' ? '6+ characters with upper & lower case, a number, and a symbol' : undefined">
+      <VyFormField name="password" class="mt-1" label="Password" :hint="mode === 'register' ? '6+ characters with upper & lower case, a number, and a symbol' : undefined">
         <VyInput
           v-model="password"
           :type="showPassword ? 'text' : 'password'"

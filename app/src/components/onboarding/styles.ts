@@ -16,14 +16,6 @@ export const subStyle = {
   color: t.color.muted,
 } as const;
 
-export const errStyle = {
-  fontFamily: t.font.body,
-  fontSize: '14px',
-  letterSpacing: t.tracking,
-  color: t.color.danger,
-  marginTop: '6px',
-} as const;
-
 export const backButtonStyle = {
   alignSelf: 'flex-start',
   marginTop: '-8px',
