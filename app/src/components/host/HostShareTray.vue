@@ -84,25 +84,32 @@ const inviteImage = computed(() => {
   >
     <template #default>
       <view :style="{ display: 'flex', flexDirection: 'column', gap: '14px' }">
-        <view :style="{ alignSelf: 'center', width: '42px', height: '5px', borderRadius: t.radius.pill, backgroundColor: '#cbd3de' }" />
-
-        <image
-          v-if="inviteImage"
-          :src="inviteImage"
-          mode="aspectFit"
-          :style="{
-            alignSelf: 'center',
-            width: '100%',
-            height: '300px',
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            borderColor: t.color.line,
-            backgroundColor: '#ffffff',
-          }"
-        />
+        <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }">
+          <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
+            Party code
+          </text>
+          <text :style="{ fontFamily: t.font.display, fontSize: '46px', fontWeight: '300', lineHeight: '1', letterSpacing: '0.04em', color: t.color.blue }">
+            {{ event.code }}
+          </text>
+          <view
+            :style="{
+              marginTop: '6px',
+              padding: '10px',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: t.color.line,
+              borderRadius: t.radius.card,
+              backgroundColor: '#ffffff',
+            }"
+          >
+            <image :src="qr.qrPng" mode="aspectFit" :style="{ width: '190px', height: '190px' }" />
+          </view>
+        </view>
 
         <scroll-view scroll-orientation="horizontal" :enable-scroll="true" :style="{ width: '100%', height: '82px' }">
-          <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '12px', padding: '2px 2px 6px' }">
+          <!-- Spacing via per-tile margins, not flex gap: vue-lynx mounts v-for fragment
+               anchors as real zero-width nodes, so gap would double up around them. -->
+          <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', padding: '2px 2px 6px' }">
             <HostShareAction
               v-if="inviteImage"
               icon="lucide:send"
