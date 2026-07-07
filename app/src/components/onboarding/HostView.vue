@@ -58,7 +58,10 @@ async function submitHost() {
       <text :style="subStyle">Hosts create and manage Picknic events.</text>
     </view>
 
-    <VyForm class="flex flex-col items-stretch w-full gap-2">
+    <!-- No gap here: VyForm/VyFormField have fragment roots whose anchor nodes
+         become real flex items on native and collect phantom gaps; space with
+         margins on the field roots instead. -->
+    <VyForm class="flex flex-col items-stretch w-full">
       <VyFormField label="Email">
         <VyInput
           v-model="emailInput"
@@ -69,7 +72,7 @@ async function submitHost() {
           placeholder="you@example.com"
         />
       </VyFormField>
-      <VyFormField label="Password" :hint="mode === 'register' ? 'At least 6 characters' : undefined">
+      <VyFormField class="mt-2" label="Password" :hint="mode === 'register' ? 'At least 6 characters' : undefined">
         <VyInput
           v-model="password"
           :type="showPassword ? 'text' : 'password'"
@@ -84,7 +87,7 @@ async function submitHost() {
           </template>
         </VyInput>
       </VyFormField>
-      <RememberMeToggle v-model="rememberMe" size="sm" />
+      <RememberMeToggle v-model="rememberMe" size="sm" class="mt-2" />
     </VyForm>
 
     <text v-if="authError" :style="errStyle">{{ authError }}</text>

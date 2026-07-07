@@ -48,7 +48,7 @@ async function continueCode() {
       <text :style="subStyle">Enter the room code from the host, or scan their QR.</text>
     </view>
 
-    <VyForm class="flex flex-col items-stretch w-full gap-2">
+    <VyForm class="flex flex-col items-stretch w-full">
       <VyFormField label="Room code">
         <VyInput
           v-model="code"
