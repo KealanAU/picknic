@@ -9,6 +9,12 @@ public class Event
 {
     public const int NameMaxLength = 120;
 
+    /// <summary>
+    /// Parties can span multiple days (weddings, festivals), but an unbounded
+    /// window would keep join links and guest tokens live indefinitely.
+    /// </summary>
+    public static readonly TimeSpan MaxUploadWindow = TimeSpan.FromDays(31);
+
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>Human-friendly code shown on invites (low entropy — not a secret).</summary>

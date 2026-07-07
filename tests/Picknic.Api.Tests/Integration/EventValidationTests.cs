@@ -64,6 +64,51 @@ public class EventValidationTests(PicknicApiFactory factory) : IClassFixture<Pic
     }
 
     [Fact]
+    public async Task Create_accepts_a_multi_day_window()
+    {
+        using var host = await factory.CreateHostClientAsync("create-multi-day@test.local");
+        var now = DateTimeOffset.UtcNow;
+
+        var res = await host.PostAsJsonAsync("/api/events",
+            EventBody(opensAt: now, closesAt: now.AddDays(3), revealAt: now.AddDays(3).AddHours(1)));
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_rejects_upload_window_over_the_length_cap()
+    {
+        using var host = await factory.CreateHostClientAsync("create-window-cap@test.local");
+        var now = DateTimeOffset.UtcNow;
+
+        var over = await host.PostAsJsonAsync("/api/events",
+            EventBody(opensAt: now, closesAt: now.Add(Event.MaxUploadWindow).AddMinutes(1),
+                revealAt: now.Add(Event.MaxUploadWindow).AddHours(2)));
+        await AssertValidationError(over, "uploadClosesAt");
+
+        // The boundary itself is fine.
+        var atLimit = await host.PostAsJsonAsync("/api/events",
+            EventBody(opensAt: now, closesAt: now.Add(Event.MaxUploadWindow),
+                revealAt: now.Add(Event.MaxUploadWindow).AddHours(1)));
+        Assert.Equal(HttpStatusCode.Created, atLimit.StatusCode);
+    }
+
+    [Fact]
+    public async Task Join_succeeds_partway_through_a_multi_day_window()
+    {
+        using var host = await factory.CreateHostClientAsync("join-multi-day@test.local");
+        var now = DateTimeOffset.UtcNow;
+
+        // Day two of a three-day party.
+        var ev = await factory.CreateEventAsync(host,
+            opensAt: now.AddDays(-1).AddHours(-2),
+            closesAt: now.AddDays(2),
+            revealAt: now.AddDays(2).AddHours(1));
+
+        var guest = await factory.JoinAsync(ev.Code, ev.JoinSecret, name: "Day Two Guest");
+        Assert.NotEqual(Guid.Empty, guest.GuestId);
+    }
+
+    [Fact]
     public async Task Create_rejects_reveal_before_the_upload_window_closes()
     {
         using var host = await factory.CreateHostClientAsync("create-reveal@test.local");
@@ -98,6 +143,11 @@ public class EventValidationTests(PicknicApiFactory factory) : IClassFixture<Pic
         var reveal = await host.PutAsJsonAsync($"/api/events/{ev.Id}",
             EventBody(opensAt: now, closesAt: now.AddHours(2), revealAt: now.AddHours(1)));
         await AssertValidationError(reveal, "revealAt");
+
+        var tooLong = await host.PutAsJsonAsync($"/api/events/{ev.Id}",
+            EventBody(opensAt: now, closesAt: now.Add(Event.MaxUploadWindow).AddDays(1),
+                revealAt: now.Add(Event.MaxUploadWindow).AddDays(2)));
+        await AssertValidationError(tooLong, "uploadClosesAt");
     }
 
     [Fact]

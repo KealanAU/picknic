@@ -300,6 +300,8 @@ public static class EventEndpoints
             errors["name"] = [$"Name must be {Event.NameMaxLength} characters or fewer."];
         if (opensAt >= closesAt)
             errors["uploadOpensAt"] = ["The upload window must open before it closes."];
+        else if (closesAt - opensAt > Event.MaxUploadWindow)
+            errors["uploadClosesAt"] = [$"A party can run for up to {Event.MaxUploadWindow.TotalDays:0} days."];
         if (revealAt < closesAt)
             errors["revealAt"] = ["The reveal must be at or after the upload window closes."];
         return errors.Count > 0 ? Results.ValidationProblem(errors) : null;
