@@ -1,17 +1,24 @@
+<script lang="ts">
+// Module-level on purpose: show the intro once per app run, not on every
+// remount (the guest FAB reopens this screen).
+let introSeen = false;
+</script>
+
 <script setup lang="ts">
 // Full-screen capture flow shared by host and guests: shutter -> framed
 // preview -> caption -> upload through the guest-token pipeline. The native
 // module presents the system camera; this screen is the before/after chrome.
 // Hosts pass a camera-pass token, guests their session token.
 import { computed, ref } from 'vue';
-import { VyButton, VyIcon, VyInput } from '@vyui/kit';
+import { VyButton, VyIcon, VyInput, VyTray } from '@vyui/kit';
 import { isApiError } from '../api/http';
 import { completeUpload, createUpload, putBlob } from '../api/photos';
 import { useCamera } from '../composables/useCamera';
 import { useToast } from '../composables/useToast';
-import { toDataUri, type CapturedPhoto } from '../native/camera';
+import { cameraInstallStatus, toDataUri, type CapturedPhoto } from '../native/camera';
 import { t } from '../theme/tokens';
 import InstaxCard from './InstaxCard.vue';
+import { subStyle, titleStyle } from './onboarding/styles';
 
 const props = defineProps<{
   eventId: string;
@@ -27,6 +34,10 @@ const emit = defineEmits<{
 const camera = useCamera();
 const { toastError } = useToast();
 
+// Shown when the camera is unavailable so on-device debugging (Lynx Go,
+// Explorer) explains itself without DevTool; e.g. "native-module-missing".
+const installCode = cameraInstallStatus().code;
+
 const photo = ref<CapturedPhoto | null>(null);
 const closePressed = ref(false);
 const shutterPressed = ref(false);
@@ -41,6 +52,16 @@ const shutterReady = computed(() => camera.available && !camera.busy.value);
 
 function friendly(e: unknown): string {
   return isApiError(e) ? e.message : 'Something went wrong. Try again.';
+}
+
+// Intro tray instead of dropping people straight into the camera; its CTA
+// launches the first capture. Swiping it away just leaves the shutter.
+const introOpen = ref(!introSeen);
+
+function introDone(launch: boolean) {
+  introSeen = true;
+  introOpen.value = false;
+  if (launch) void snap();
 }
 
 async function snap() {
@@ -101,7 +122,7 @@ async function addToRoll() {
       flexDirection: 'column',
     }"
   >
-    <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '20px' }">
+    <view class="safe-top" :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '20px' }">
       <view
         :style="{
           width: '40px',
@@ -153,12 +174,17 @@ async function addToRoll() {
     </view>
 
     <view :style="{ height: '150px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }">
-      <text
+      <view
         v-if="!camera.available"
-        :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.muted }"
+        :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center' }"
       >
-        Camera isn't available on this device.
-      </text>
+        <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.muted }">
+          Camera isn't available on this device.
+        </text>
+        <text :style="{ marginTop: '6px', fontFamily: t.font.body, fontSize: '11px', letterSpacing: t.trackingSmall, color: t.color.muted }">
+          {{ installCode }}
+        </text>
+      </view>
 
       <view
         v-else-if="!photo"
@@ -204,6 +230,34 @@ async function addToRoll() {
         </VyButton>
       </view>
     </view>
+
+    <VyTray
+      :open="introOpen"
+      variant="floating"
+      overlay
+      dismissible
+      handle
+      :ui="{
+        content: 'z-[1051] pk-tray-radius pk-onboarding-tray-surface',
+        morph: 'pk-onboarding-tray-surface',
+        viewport: 'pk-onboarding-tray-surface',
+        body: 'px-4 pb-5 pk-onboarding-tray-surface',
+        footer: 'pk-onboarding-tray-surface',
+      }"
+      @update:open="!$event && introDone(false)"
+    >
+      <template #default>
+        <view :style="{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }">
+          <text :style="titleStyle">Say cheese</text>
+          <text :style="subStyle">
+            Photos you snap land on the party's roll. The roll stays hidden until the party wraps — no peeking until then.
+          </text>
+        </view>
+        <VyButton color="primary" size="xl" block leading-icon="lucide:camera" @tap="introDone(true)">
+          Open the camera
+        </VyButton>
+      </template>
+    </VyTray>
   </view>
 </template>
 
