@@ -38,6 +38,8 @@ class ViewController: UIViewController {
             // Registers as "CameraModule" on the JS side; LynxCameraView.m
             // self-registers <camera-view> when compiled into the target.
             config.register(LynxCameraModule.self)
+            // Persistent KV storage (auth tokens, guest session, intro flag).
+            config.register(NativeKVModule.self)
             builder.config = config
             builder.screenSize = self.view.frame.size
             builder.fontScale = 1.0
