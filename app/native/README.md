@@ -8,19 +8,36 @@ iOS/Android host app that embeds the Lynx runtime.
 
 ## The JS ⇄ native contract
 
-```
-NativeModules.CameraModule.capture({ quality: number, facing: "back"|"front" }, callback)
-```
+`src/native/camera.ts` now delegates to the `@kealanau/lynx-camera` package
+(developed at `~/Documents/Code/lynx-camera`), which supports two native
+module shapes:
 
-`callback` receives a plain object:
+1. **Legacy (these files):**
 
-| Field    | Type   | When       |
-| -------- | ------ | ---------- |
-| `base64` | string | success — JPEG bytes, base64 (no data: prefix) |
-| `width`  | int    | success    |
-| `height` | int    | success    |
-| `mime`   | string | success — `"image/jpeg"` |
-| `error`  | string | failure — contains `"cancel"` if the user backed out |
+   ```
+   NativeModules.CameraModule.capture({ quality: number, facing: "back"|"front" }, callback)
+   ```
+
+   `callback` receives a plain object:
+
+   | Field    | Type   | When       |
+   | -------- | ------ | ---------- |
+   | `base64` | string | success — JPEG bytes, base64 (no data: prefix) |
+   | `width`  | int    | success    |
+   | `height` | int    | success    |
+   | `mime`   | string | success — `"image/jpeg"` |
+   | `error`  | string | failure — contains `"cancel"` if the user backed out |
+
+   The package treats this shape as a deprecated fallback (slated for removal
+   before its `0.2.0`), so the existing host modules keep working for now.
+
+2. **Current (the package's own module):** compile
+   `node_modules/@kealanau/lynx-camera/ios/LynxCameraModule.swift` into the
+   host instead — same system-camera capture plus permissions, device
+   enumeration, and the version-checked install status
+   (`getCameraInstallStatus()`), which the app now shows in the camera screen
+   when capture is unavailable. Prefer this for new host builds; see
+   `node_modules/@kealanau/lynx-camera/docs/ios-install.md`.
 
 `src/native/camera.ts` decodes `base64` to an `ArrayBuffer` and hands the rest of
 the app a plain `CapturedPhoto`. Nothing above the boundary sees `NativeModules`.

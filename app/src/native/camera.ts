@@ -1,10 +1,20 @@
-// Native camera boundary — the only place that touches NativeModules.CameraModule.
-// Lynx has no built-in camera; the host app implements this module (see
-// app/native/ios & app/native/android), so it's absent in Explorer/web preview.
+// Native camera boundary — delegates to @kealanau/lynx-camera, the only
+// place that touches NativeModules.CameraModule. The adapter understands
+// both this app's legacy host module (`capture`, see app/native/ios &
+// app/native/android) and the package's newer module (`capturePhoto` etc.),
+// and it's absent in Explorer / Lynx Go / web preview.
 // Callers must check isCameraAvailable() and degrade.
 
 // Static import (not dynamic): lazy chunks load through Lynx's own chunk
 // loader, which is unreliable in the web preview.
+import {
+  createCameraAdapter,
+  getCameraInstallStatus,
+  type CameraAdapter,
+  type CameraInstallStatus,
+  type CapturePhotoOptions,
+} from '@kealanau/lynx-camera';
+import { createMockCameraModule } from '@kealanau/lynx-camera/mock';
 import { DEV_SAMPLE_JPEG_BASE64 } from './devSamplePhoto';
 
 export interface CaptureOptions {
@@ -19,43 +29,47 @@ export interface CapturedPhoto {
   mime: string;
 }
 
-interface NativeCaptureResult {
-  base64?: string;
-  width?: number;
-  height?: number;
-  mime?: string;
-  error?: string; // non-empty when capture failed or was cancelled
-}
+let nativeAdapter: CameraAdapter | null = null;
+let devMockAdapter: CameraAdapter | null = null;
 
-interface NativeCameraModule {
-  capture(
-    options: { quality: number; facing: string },
-    callback: (result: NativeCaptureResult) => void,
-  ): unknown;
-}
-
-declare const NativeModules: Record<string, any> | undefined;
-
-function cameraModule(): NativeCameraModule | null {
-  try {
-    return typeof NativeModules !== 'undefined'
-      ? (NativeModules.CameraModule as NativeCameraModule) ?? null
-      : null;
-  } catch {
-    return null;
+// Resolved lazily and re-probed until found: some hosts register
+// NativeModules after the JS bundle evaluates, so probing once at module
+// eval would latch "unavailable" for the whole session. Only a real native
+// adapter is cached; the DEV mock is a per-call fallback so a late-arriving
+// native module still wins.
+function getAdapter(): CameraAdapter | null {
+  if (!nativeAdapter) {
+    nativeAdapter = createCameraAdapter({ optional: true });
   }
-}
+  if (nativeAdapter) return nativeAdapter;
 
-// DEV-only stand-in: Explorer and the web preview have no CameraModule, so the
-// fake returns an embedded sample JPEG and the whole capture->upload flow stays
-// exercisable. Prod builds drop this branch with import.meta.env.DEV.
-function devFakeAvailable(): boolean {
-  return !!import.meta.env.DEV;
+  // DEV-only stand-in: Explorer, Lynx Go, and the web preview have no
+  // CameraModule, so the package mock returns the embedded sample JPEG and
+  // the whole capture->upload flow stays exercisable. Prod builds drop this
+  // branch with import.meta.env.DEV.
+  if (import.meta.env.DEV) {
+    devMockAdapter ??= createMockCameraModule({
+      photo: {
+        path: 'mock://picknic/dev-sample.jpg',
+        width: 320,
+        height: 280,
+        mime: 'image/jpeg',
+        base64: DEV_SAMPLE_JPEG_BASE64,
+      },
+    });
+    return devMockAdapter;
+  }
+  return null;
 }
 
 export function isCameraAvailable(): boolean {
-  const mod = cameraModule();
-  return (!!mod && typeof mod.capture === 'function') || devFakeAvailable();
+  return getAdapter() !== null;
+}
+
+// Why the camera is (un)available — render this on device when debugging;
+// console logs are invisible on Lynx Go without DevTool attached.
+export function cameraInstallStatus(): CameraInstallStatus {
+  return getCameraInstallStatus();
 }
 
 export class CameraCancelled extends Error {
@@ -66,56 +80,34 @@ export class CameraCancelled extends Error {
 }
 
 export async function capturePhoto(options: CaptureOptions = {}): Promise<CapturedPhoto> {
-  const mod = cameraModule();
-  if (!mod || typeof mod.capture !== 'function') {
-    if (devFakeAvailable()) {
-      return {
-        bytes: base64ToArrayBuffer(DEV_SAMPLE_JPEG_BASE64),
-        width: 320,
-        height: 280,
-        mime: 'image/jpeg',
-      };
-    }
-    throw new Error('Camera is not available in this runtime.');
+  const adapter = getAdapter();
+  if (!adapter) throw new Error('Camera is not available in this runtime.');
+
+  const captureOptions: CapturePhotoOptions = {};
+  if (options.quality !== undefined) captureOptions.quality = options.quality;
+  if (options.facing !== undefined) captureOptions.facing = options.facing;
+
+  let photo;
+  try {
+    photo = await adapter.capturePhoto(captureOptions);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (/cancel/i.test(message)) throw new CameraCancelled();
+    throw e instanceof Error ? e : new Error(message);
   }
 
-  const args = {
-    quality: clamp01(options.quality ?? 0.9),
-    facing: options.facing ?? 'back',
-  };
-
-  const result = await new Promise<NativeCaptureResult>((resolve, reject) => {
-    try {
-      // Host may resolve via the callback or a returned Promise; support both.
-      const captureReturn = mod.capture(args, (r) => resolve(r ?? {}));
-      if (captureReturn && typeof (captureReturn as any).then === 'function') {
-        (captureReturn as Promise<NativeCaptureResult>).then((r) => resolve(r ?? {}), reject);
-      }
-    } catch (e) {
-      reject(e);
-    }
-  });
-
-  if (result.error) {
-    if (/cancel/i.test(result.error)) throw new CameraCancelled();
-    throw new Error(result.error);
-  }
-  if (!result.base64) throw new Error('Camera returned no image data.');
+  if (!photo.base64) throw new Error('Camera returned no image data.');
 
   return {
-    bytes: base64ToArrayBuffer(result.base64),
-    width: result.width ?? 0,
-    height: result.height ?? 0,
-    mime: result.mime ?? 'image/jpeg',
+    bytes: base64ToArrayBuffer(photo.base64),
+    width: photo.width ?? 0,
+    height: photo.height ?? 0,
+    mime: photo.mime ?? 'image/jpeg',
   };
 }
 
 export function toDataUri(photo: CapturedPhoto): string {
   return `data:${photo.mime};base64,${arrayBufferToBase64(photo.bytes)}`;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
