@@ -330,9 +330,7 @@ onMounted(() => {
             <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.muted }">
               Name it, date it, get your party code.
             </text>
-            <VyButton color="primary" size="lg" block :style="{ marginTop: '12px' }" @tap="settingsTrayOpen = true">
-              Make the party
-            </VyButton>
+            <VyButton color="primary" size="lg" block :style="{ marginTop: '12px' }" label="Make the party" @tap="settingsTrayOpen = true" />
           </view>
         </VyCard>
 

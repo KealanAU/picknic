@@ -88,9 +88,7 @@ function chipTextStyle(active: boolean) {
       <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, textTransform: 'uppercase', color: t.color.muted }">
         Guests · {{ joinedCount }}
       </text>
-      <VyButton size="sm" variant="ghost" :loading="busy" @tap="$emit('refresh')">
-        Refresh
-      </VyButton>
+      <VyButton size="sm" variant="ghost" :loading="busy" label="Refresh" @tap="$emit('refresh')" />
     </view>
 
     <view v-if="guests.length" :style="{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', marginBottom: '8px' }">

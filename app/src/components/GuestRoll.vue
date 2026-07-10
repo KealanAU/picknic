@@ -52,9 +52,7 @@ onMounted(async () => {
       </text>
 
       <view :style="{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', marginTop: '10px' }">
-        <VyButton size="sm" variant="ghost" @tap="$emit('leave')">
-          Leave the roll
-        </VyButton>
+        <VyButton size="sm" variant="ghost" label="Leave the roll" @tap="$emit('leave')" />
       </view>
     </view>
 

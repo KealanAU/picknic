@@ -34,12 +34,8 @@ defineEmits<{
     </view>
 
     <template v-if="showShare">
-      <VyButton v-if="!shareReady" size="lg" block :loading="busy" :style="{ marginTop: '12px' }" @tap="$emit('refresh')">
-        Get invite link
-      </VyButton>
-      <VyButton v-else color="primary" size="lg" block :style="{ marginTop: '12px' }" @tap="$emit('share')">
-        Share invite
-      </VyButton>
+      <VyButton v-if="!shareReady" size="lg" block :loading="busy" :style="{ marginTop: '12px' }" label="Get invite link" @tap="$emit('refresh')" />
+      <VyButton v-else color="primary" size="lg" block :style="{ marginTop: '12px' }" label="Share invite" @tap="$emit('share')" />
     </template>
   </view>
 </template>

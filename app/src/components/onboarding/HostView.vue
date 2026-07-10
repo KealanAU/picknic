@@ -52,10 +52,9 @@ async function submitHost() {
       size="sm"
       leading-icon="lucide:arrow-left"
       :style="backButtonStyle"
+      label="Back"
       @tap="$emit('back')"
-    >
-      Back
-    </VyButton>
+    />
     <view :style="headerStyle">
       <text :style="titleStyle">{{ hostTitle }}</text>
       <text :style="subStyle">Make the party, share the code, reveal the roll.</text>
@@ -100,18 +99,16 @@ async function submitHost() {
       :loading="authBusy"
       :disabled="!canHostSubmit"
       :style="primaryActionStyle"
+      :label="hostCta"
       @tap="submitHost"
-    >
-      {{ hostCta }}
-    </VyButton>
+    />
     <VyButton
       variant="ghost"
       size="lg"
       block
       :style="{ marginTop: '2px' }"
+      :label="mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Log in'"
       @tap="mode = mode === 'login' ? 'register' : 'login'"
-    >
-      {{ mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Log in' }}
-    </VyButton>
+    />
   </VyTrayView>
 </template>

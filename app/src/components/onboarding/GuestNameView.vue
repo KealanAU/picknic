@@ -44,10 +44,9 @@ async function submitJoin() {
       size="sm"
       leading-icon="lucide:arrow-left"
       :style="backButtonStyle"
+      label="Back"
       @tap="$emit('back')"
-    >
-      Back
-    </VyButton>
+    />
     <view :style="headerStyle">
       <text :style="titleStyle">You're joining {{ eventName }}</text>
       <text :style="subStyle">What should we call you on the roll?</text>
@@ -67,9 +66,8 @@ async function submitJoin() {
       :loading="joinBusy"
       :disabled="!canJoin"
       :style="primaryActionStyle"
+      label="Join & start snapping"
       @tap="submitJoin"
-    >
-      Join &amp; start snapping
-    </VyButton>
+    />
   </VyTrayView>
 </template>

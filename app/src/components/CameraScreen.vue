@@ -1,7 +1,12 @@
 <script lang="ts">
-// Module-level on purpose: show the intro once per app run, not on every
-// remount (the guest FAB reopens this screen).
+import { storage } from '../api/storage';
+
+// Module-level cache over the persisted flag: show the intro once ever, not
+// on every remount (the guest FAB reopens this screen) or app restart.
+const INTRO_KEY = 'picknic.intro.seen';
 let introSeen = false;
+// Live-preview choice survives FAB remounts within a run; per-run on purpose.
+let livePreferred = false;
 </script>
 
 <script setup lang="ts">
@@ -15,7 +20,7 @@ import { isApiError } from '../api/http';
 import { completeUpload, createUpload, putBlob } from '../api/photos';
 import { useCamera } from '../composables/useCamera';
 import { useToast } from '../composables/useToast';
-import { cameraInstallStatus, toDataUri, type CapturedPhoto } from '../native/camera';
+import { cameraInstallStatus, captureFromView, toDataUri, type CapturedPhoto } from '../native/camera';
 import { t } from '../theme/tokens';
 import InstaxCard from './InstaxCard.vue';
 import { subStyle, titleStyle } from './onboarding/styles';
@@ -46,9 +51,16 @@ const uploadStage = ref<'idle' | 'requesting' | 'uploading' | 'finalizing'>('idl
 const addedCount = ref(0);
 const justAdded = ref(false);
 
+// Live embedded preview (<camera-view>) instead of the system camera sheet.
+// Only offered on full native installs — the element is compiled in alongside
+// the module, and mock/web runtimes have neither.
+const liveSupported = installCode === 'installed';
+const liveMode = ref(liveSupported && livePreferred);
+const liveBusy = ref(false);
+
 const previewUri = computed(() => (photo.value ? toDataUri(photo.value) : undefined));
 const uploading = computed(() => uploadStage.value !== 'idle');
-const shutterReady = computed(() => camera.available && !camera.busy.value);
+const shutterReady = computed(() => camera.available && !camera.busy.value && !liveBusy.value);
 
 function friendly(e: unknown): string {
   return isApiError(e) ? e.message : 'Something went wrong. Try again.';
@@ -56,17 +68,40 @@ function friendly(e: unknown): string {
 
 // Intro tray instead of dropping people straight into the camera; its CTA
 // launches the first capture. Swiping it away just leaves the shutter.
-const introOpen = ref(!introSeen);
+// Starts closed and opens only after the storage read misses, so returning
+// users never see it flash.
+const introOpen = ref(false);
+if (!introSeen) {
+  void storage.getItem(INTRO_KEY).then((v) => {
+    introSeen = !!v;
+    introOpen.value = !introSeen;
+  });
+}
 
 function introDone(launch: boolean) {
   introSeen = true;
   introOpen.value = false;
+  void storage.setItem(INTRO_KEY, '1');
   if (launch) void snap();
 }
 
 async function snap() {
   if (!shutterReady.value) return;
   justAdded.value = false;
+
+  if (liveMode.value) {
+    liveBusy.value = true;
+    try {
+      photo.value = await captureFromView('#pk-live-camera', { quality: 0.9 });
+      caption.value = '';
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
+    } finally {
+      liveBusy.value = false;
+    }
+    return;
+  }
+
   const shot = await camera.capture();
   if (shot) {
     photo.value = shot;
@@ -75,6 +110,20 @@ async function snap() {
     // capture() returns null on cancel too; only real failures set error.
     toastError(camera.error.value);
   }
+}
+
+function toggleLive() {
+  if (uploading.value || liveBusy.value) return;
+  liveMode.value = !liveMode.value;
+  livePreferred = liveMode.value;
+}
+
+// Native session failures (permission denied, camera in use): fall back to
+// the system camera path rather than leaving a dead black viewfinder.
+function onLiveError(e: { detail?: { message?: string } }) {
+  toastError(e?.detail?.message ?? "The live camera hit a snag — using the regular one.");
+  liveMode.value = false;
+  livePreferred = false;
 }
 
 function retake() {
@@ -123,27 +172,52 @@ async function addToRoll() {
     }"
   >
     <view class="safe-top" :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '20px' }">
-      <view
-        :style="{
-          width: '40px',
-          height: '40px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: t.radius.pill,
-          backgroundColor: '#ffffff',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: t.color.line,
-          opacity: uploading ? 0.4 : 1,
-          transform: closePressed ? 'scale(0.92)' : 'scale(1)',
-        }"
-        @tap="!uploading && emit('close')"
-        @touchstart="closePressed = true"
-        @touchend="closePressed = false"
-        @touchcancel="closePressed = false"
-      >
-        <VyIcon name="lucide:x" :style="{ width: '20px', height: '20px', color: t.color.ink }" />
+      <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center' }">
+        <view
+          :style="{
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: t.radius.pill,
+            backgroundColor: '#ffffff',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: t.color.line,
+            opacity: uploading ? 0.4 : 1,
+            transform: closePressed ? 'scale(0.92)' : 'scale(1)',
+          }"
+          @tap="!uploading && emit('close')"
+          @touchstart="closePressed = true"
+          @touchend="closePressed = false"
+          @touchcancel="closePressed = false"
+        >
+          <VyIcon name="lucide:x" :style="{ width: '20px', height: '20px', color: t.color.ink }" />
+        </view>
+        <view
+          v-if="liveSupported"
+          :style="{
+            marginLeft: '10px',
+            height: '40px',
+            paddingLeft: '14px',
+            paddingRight: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: t.radius.pill,
+            backgroundColor: liveMode ? t.color.blue : '#ffffff',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: liveMode ? t.color.blue : t.color.line,
+            opacity: uploading ? 0.4 : 1,
+          }"
+          @tap="toggleLive"
+        >
+          <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, color: liveMode ? '#ffffff' : t.color.ink }">
+            Live
+          </text>
+        </view>
       </view>
       <text :style="{ fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.trackingSmall, color: t.color.muted }">
         {{ addedCount ? `${addedCount} on the roll` : title }}
@@ -153,7 +227,21 @@ async function addToRoll() {
     <!-- Margin spacing throughout: children are conditional and vue-lynx
          renders v-if anchors as real nodes, so container gap would double up. -->
     <view :style="{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }">
-      <InstaxCard :src="previewUri" :caption="photo ? caption || ' ' : undefined" :width="300" develop />
+      <!-- Live viewfinder swaps in for the empty frame; the captured photo
+           still lands in the InstaxCard so the develop fade is kept. -->
+      <view
+        v-if="liveMode && !photo"
+        :style="{ width: '300px', height: '375px', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000000' }"
+      >
+        <camera-view
+          id="pk-live-camera"
+          :active="true"
+          facing="back"
+          :style="{ width: '100%', height: '100%' }"
+          @error="onLiveError"
+        />
+      </view>
+      <InstaxCard v-else :src="previewUri" :caption="photo ? caption || ' ' : undefined" :width="300" develop />
 
       <VyInput
         v-if="photo"
@@ -222,12 +310,8 @@ async function addToRoll() {
       </view>
 
       <view v-else :style="{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }">
-        <VyButton size="lg" variant="ghost" :disabled="uploading" @tap="retake">
-          Retake
-        </VyButton>
-        <VyButton color="primary" size="lg" :loading="uploading" :style="{ flex: 1 }" @tap="addToRoll">
-          Add to the roll
-        </VyButton>
+        <VyButton size="lg" variant="ghost" :disabled="uploading" label="Retake" @tap="retake" />
+        <VyButton color="primary" size="lg" :loading="uploading" :style="{ flex: 1 }" label="Add to the roll" @tap="addToRoll" />
       </view>
     </view>
 
@@ -253,9 +337,7 @@ async function addToRoll() {
             Photos you snap land on the party's roll. The roll stays hidden until the party wraps — no peeking until then.
           </text>
         </view>
-        <VyButton color="primary" size="xl" block leading-icon="lucide:camera" @tap="introDone(true)">
-          Open the camera
-        </VyButton>
+        <VyButton color="primary" size="xl" block leading-icon="lucide:camera" label="Open the camera" @tap="introDone(true)" />
       </template>
     </VyTray>
   </view>

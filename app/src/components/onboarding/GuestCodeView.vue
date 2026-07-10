@@ -41,10 +41,9 @@ async function continueCode() {
       size="sm"
       leading-icon="lucide:arrow-left"
       :style="backButtonStyle"
+      label="Back"
       @tap="$emit('back')"
-    >
-      Back
-    </VyButton>
+    />
     <view :style="headerStyle">
       <text :style="titleStyle">Join the party</text>
       <text :style="subStyle">Enter the party code your host shared.</text>
@@ -69,9 +68,8 @@ async function continueCode() {
       :loading="codeBusy"
       :disabled="!canContinueCode"
       :style="primaryActionStyle"
+      label="Continue"
       @tap="continueCode"
-    >
-      Continue
-    </VyButton>
+    />
   </VyTrayView>
 </template>
