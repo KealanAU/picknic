@@ -10,3 +10,5 @@ patchedDependencies:
 minimumReleaseAgeExclude:
   - '@vyui/core'
   - '@vyui/kit'
+  # Local tarball in app/vendor, not on the npm registry — age can't be checked.
+  - '@kealanau/lynx-camera'

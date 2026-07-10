@@ -36,6 +36,8 @@ dist/
 .npm/
 .yarn/
 *.tgz
+# Vendored local packages CI must install (not on npm yet).
+!app/vendor/*.tgz
 
 # ---- Nuxt ----
 .nuxt/
