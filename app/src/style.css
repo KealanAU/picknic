@@ -27,6 +27,12 @@ html {
     url('./assets/fonts/Comico-Regular.ttf') format('truetype');
 }
 
+/* The LynxView fills the screen, so top-of-screen headers must clear the
+ * status bar themselves. env() resolves to 0 in the web preview. */
+.safe-top {
+  padding-top: calc(env(safe-area-inset-top) + 12px);
+}
+
 :root {
   --color-cream: #fff8f1;
   --color-ash: #e2e8f0;

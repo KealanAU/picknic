@@ -41,7 +41,7 @@ onMounted(async () => {
 
 <template>
   <view :style="{ width: '100%', height: '100%' }">
-    <view :style="{ width: '100%', display: 'flex', flexDirection: 'column', padding: '24px 20px 120px' }">
+    <view class="safe-top" :style="{ width: '100%', display: 'flex', flexDirection: 'column', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '120px' }">
       <PartyHeader kicker="You're on the roll" :title="partyName || 'Your party'" :date="partyDate" />
 
       <text
