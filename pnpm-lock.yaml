@@ -13,12 +13,15 @@ importers:
 
   app:
     dependencies:
+      '@kealanau/lynx-camera':
+        specifier: file:/Users/kealanclarke/Documents/Code/lynx-camera/kealanau-lynx-camera-0.1.0-alpha.0.tgz
+        version: file:../lynx-camera/kealanau-lynx-camera-0.1.0-alpha.0.tgz
       '@vyui/core':
-        specifier: ^0.2.0
-        version: 0.2.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
+        specifier: ^0.2.2
+        version: 0.2.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
       '@vyui/kit':
-        specifier: ^0.3.0
-        version: 0.3.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
+        specifier: ^0.3.2
+        version: 0.3.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
       vue:
         specifier: ^3.5.0
         version: 3.5.39(typescript@5.9.3)
@@ -105,8 +108,8 @@ packages:
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
 
-  '@iconify/utils@3.1.3':
-    resolution: {integrity: sha512-LPKOXPn/zV+zis1oOfGWogaXVpqUybF3ZS6SCZIsz8vg0ivVp9+fVqyYB7xq0aiST/VhUQYGO1qo6uoYSiEJqw==}
+  '@iconify/utils@3.1.4':
+    resolution: {integrity: sha512-b1S7B1k9ohZ+iNTi2ATxbRYG9fTrJmUT0rc46bvVnNxqNRGW7dyo/vRREwyniI5IRN2RSJHDcm+s3BjWrSAjHw==}
 
   '@internationalized/date@3.12.2':
     resolution: {integrity: sha512-FY1Y+H64NDs+HAF6omlnWxm3mEpfgaCSWtL5l551ZZfImA+kGjPFgrnJrGjH6lfmLL0g8Z/mBu1R3kufeCp6Jw==}
@@ -134,6 +137,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@kealanau/lynx-camera@file:../lynx-camera/kealanau-lynx-camera-0.1.0-alpha.0.tgz':
+    resolution: {integrity: sha512-ihgMhEZOKZ+aGVrnKfK/ZqyqIWbc6IMHxEs0AWxRN1lNvrrkKbMyKWCKhxwdsQuk9sRMGPx4qU/B0Mv35mQJ7w==, tarball: file:../lynx-camera/kealanau-lynx-camera-0.1.0-alpha.0.tgz}
+    version: 0.1.0-alpha.0
 
   '@lynx-js/cache-events-webpack-plugin@0.0.3':
     resolution: {integrity: sha512-ijKI7zlBgZYo4Hbai3BpsNkKmetNrV8VqbVbFCwlX70+DET2jvxm5Lngzqo4yteHNAFOA58XoMa81bQKFTX7WQ==}
@@ -511,8 +518,8 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@vyui/core@0.2.0':
-    resolution: {integrity: sha512-36llFtS94OhSh/1F7Bk0WRa6gh02gsiYPuMGO0SHM/xZbt3HhsxPQcZZktwj16Fd/rAhG+CNZWaqxiH+VzhA6A==}
+  '@vyui/core@0.2.2':
+    resolution: {integrity: sha512-aCSq8uSDvVLJuGqMDk+V8IjdUyMfeDjnvUpiv7+gW3lQqhLgcVm5C3nUq59qZHbldo/4yOcyyqOYoLwAejP0kQ==}
     peerDependencies:
       '@lynx-js/react': ^0.116.5
       '@lynx-js/types': ^3.8.0
@@ -522,8 +529,8 @@ packages:
       '@lynx-js/types':
         optional: true
 
-  '@vyui/kit@0.3.0':
-    resolution: {integrity: sha512-VTXDtBSo0xZVKiO4xzZE9/cwzJKwCVCGbbecN5w4kmJrvq5By3pwGMWg7kLI88XNuKoPwdO7nW6a2McJJ7/Zwg==}
+  '@vyui/kit@0.3.2':
+    resolution: {integrity: sha512-kVEc92wTTwEyqLvoJOes5mBg3pzGFTV5NI3jTewZwhKtF8wJ9SEZeAN4U7YiDE4Zc2doA8jN5f21OsiDYXsjRw==}
     peerDependencies:
       tailwindcss: ^3.4.0
       vue: '>= 3.4.0'
@@ -979,8 +986,8 @@ packages:
     resolution: {integrity: sha512-QHTXI/sZQmko1cbDoNAa3mJ5qhWUUNAq3vR0/YiD379fWQrcfuoX1+HW2S0MTt7XmoPLapdaDKUtelUSPic7hQ==}
     engines: {node: '>=10.13.0'}
 
-  enhanced-resolve@5.24.1:
-    resolution: {integrity: sha512-7DdUaTjmNwMcH2gLr1qycesKII3BK4RLy/mdAb7x10Lq7bR4aNKHt1BR1ZALSv0rPM/hF5wYF0PhGop/rJm8vw==}
+  enhanced-resolve@5.24.2:
+    resolution: {integrity: sha512-rpsZEGT1jFuve6QlpyRp9ckQ+kN61hvF9BzCPyMdaKTm8UJce96KBn3sorXOFXlzjPrs3Vc4T1NsSroZ3PxlFw==}
     engines: {node: '>=10.13.0'}
 
   entities@4.5.0:
@@ -2203,8 +2210,8 @@ packages:
     resolution: {integrity: sha512-6i/00NBjP4yGPs+caKSyRfpTF/8Torsu0MOW3mMzIbhgISFder8i7xbqgHlLMwJrdiN8ndBV3UA1/AfzPSr+jg==}
     engines: {node: '>=10.13.0'}
 
-  webpack-sources@3.5.0:
-    resolution: {integrity: sha512-HPuy+uuoTCaaoEoI1LQ3JN9+vrPBvEesnnX1jADHy728cHSMlq4wUc4afYqahq2B1mhQVZxCXOkNTnXltr+2vQ==}
+  webpack-sources@3.5.1:
+    resolution: {integrity: sha512-jyuiGJdtvY434z5bUZrjz67v76/ePNvFZTp9Mdz29IlH4+GPsgyGjiv0fKI+M7BdkU6ADjulUcKAd3tUK3WlEw==}
     engines: {node: '>=10.13.0'}
 
   webpack@5.108.3:
@@ -2299,7 +2306,7 @@ snapshots:
 
   '@iconify/types@2.0.0': {}
 
-  '@iconify/utils@3.1.3':
+  '@iconify/utils@3.1.4':
     dependencies:
       '@antfu/install-pkg': 1.1.0
       '@iconify/types': 2.0.0
@@ -2340,6 +2347,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@kealanau/lynx-camera@file:../lynx-camera/kealanau-lynx-camera-0.1.0-alpha.0.tgz': {}
 
   '@lynx-js/cache-events-webpack-plugin@0.0.3':
     dependencies:
@@ -2849,10 +2858,10 @@ snapshots:
     dependencies:
       vue: 3.5.39(typescript@5.9.3)
 
-  '@vyui/core@0.2.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))':
+  '@vyui/core@0.2.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))':
     dependencies:
       '@iconify/types': 2.0.0
-      '@iconify/utils': 3.1.3
+      '@iconify/utils': 3.1.4
       '@internationalized/date': 3.12.2
       '@lynx-js/react': 0.116.5(@types/react@18.3.31)
       '@vueuse/core': 14.3.0(vue@3.5.39(typescript@5.9.3))
@@ -2863,9 +2872,9 @@ snapshots:
       vue-component-type-helpers: 3.3.6
       vue-lynx: 0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16))
 
-  '@vyui/kit@0.3.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))':
+  '@vyui/kit@0.3.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(tailwindcss@3.4.19)(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))':
     dependencies:
-      '@vyui/core': 0.2.0(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
+      '@vyui/core': 0.2.2(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.4.0(patch_hash=ce21effe5309ee52d77d7c22c467cc49a41ba0f15965c035365af0d1346f32b7)(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.39(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.39(typescript@5.9.3))
       defu: 6.1.7
       tailwind-variants: 0.3.1(tailwindcss@3.4.19)
       tailwindcss: 3.4.19
@@ -3378,7 +3387,7 @@ snapshots:
       graceful-fs: 4.2.11
       tapable: 2.3.3
 
-  enhanced-resolve@5.24.1:
+  enhanced-resolve@5.24.2:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.3.3
@@ -4660,7 +4669,7 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
 
-  webpack-sources@3.5.0: {}
+  webpack-sources@3.5.1: {}
 
   webpack@5.108.3(postcss@8.5.16):
     dependencies:
@@ -4673,7 +4682,7 @@ snapshots:
       acorn-import-phases: 1.0.4(acorn@8.17.0)
       browserslist: 4.28.4
       chrome-trace-event: 1.0.4
-      enhanced-resolve: 5.24.1
+      enhanced-resolve: 5.24.2
       es-module-lexer: 2.3.0
       eslint-scope: 5.1.1
       events: 3.3.0
@@ -4685,7 +4694,7 @@ snapshots:
       schema-utils: 4.3.3
       tapable: 2.3.3
       watchpack: 2.5.2
-      webpack-sources: 3.5.0
+      webpack-sources: 3.5.1
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
