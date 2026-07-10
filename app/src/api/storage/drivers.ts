@@ -1,10 +1,5 @@
 import type { StorageDriver } from './types';
-import {
-  nativeModule,
-  type NativeKVModule,
-  type NativeSqliteModule,
-  type SqliteResult,
-} from './native';
+import { nativeModule, type NativeKVModule } from './native';
 
 // Not persistent — lost on reload (e.g. Lynx Explorer).
 export function memoryDriver(): StorageDriver {
@@ -53,10 +48,13 @@ export function nativeKvDriver(): StorageDriver {
     isAvailable: () => !!(mod && get && set),
     getItem: (key) =>
       new Promise((resolve) => {
+        // Absent keys may arrive as null, undefined, NSNull-ish objects, or ''
+        // (the blanking-removal convention below) depending on the host bridge.
+        const norm = (v: unknown) => (typeof v === 'string' && v !== '' ? v : null);
         try {
           // Some hosts return the value synchronously; others resolve via the callback.
-          const syncResult = get.call(mod, key, (v: string | null) => resolve(v ?? null));
-          if (typeof syncResult === 'string' || syncResult === null) resolve(syncResult ?? null);
+          const syncResult = get.call(mod, key, (v: unknown) => resolve(norm(v)));
+          if (syncResult !== undefined) resolve(norm(syncResult));
         } catch {
           resolve(null);
         }
@@ -67,36 +65,6 @@ export function nativeKvDriver(): StorageDriver {
     removeItem: async (key) => {
       if (remove) remove.call(mod, key);
       else set.call(mod, key, ''); // blanking ≈ removal when no remove method
-    },
-  };
-}
-
-export function sqliteKvDriver(table = 'kv'): StorageDriver {
-  const mod = nativeModule<NativeSqliteModule>('NativeSqliteModule');
-
-  const exec = (sql: string, params: Array<string | number | null> = []) =>
-    new Promise<SqliteResult>((resolve, reject) => {
-      mod!.execute(sql, params, resolve, (m) => reject(new Error(m)));
-    });
-
-  return {
-    name: `sqlite:${table}`,
-    isAvailable: () => !!mod,
-    init: async () => {
-      await exec(`CREATE TABLE IF NOT EXISTS "${table}" (k TEXT PRIMARY KEY, v TEXT NOT NULL)`);
-    },
-    getItem: async (key) => {
-      const { rows } = await exec(`SELECT v FROM "${table}" WHERE k = ?`, [key]);
-      return rows.length ? String(rows[0].v) : null;
-    },
-    setItem: async (key, value) => {
-      await exec(
-        `INSERT INTO "${table}" (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v`,
-        [key, value],
-      );
-    },
-    removeItem: async (key) => {
-      await exec(`DELETE FROM "${table}" WHERE k = ?`, [key]);
     },
   };
 }

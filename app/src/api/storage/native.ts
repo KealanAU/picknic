@@ -21,23 +21,3 @@ export interface NativeKVModule {
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
 }
-
-export interface SqliteRow {
-  [column: string]: string | number | null;
-}
-
-export interface SqliteResult {
-  rows: SqliteRow[];
-  rowsAffected: number;
-  insertId?: number;
-}
-
-// One statement per call; params bind the `?` placeholders.
-export interface NativeSqliteModule {
-  execute(
-    sql: string,
-    params: Array<string | number | null>,
-    onSuccess: (result: SqliteResult) => void,
-    onError: (message: string) => void,
-  ): void;
-}

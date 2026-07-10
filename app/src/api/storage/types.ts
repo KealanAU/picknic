@@ -7,5 +7,4 @@ export interface KeyValueStore {
 export interface StorageDriver extends KeyValueStore {
   readonly name: string;
   isAvailable(): boolean;
-  init?(): Promise<void>;
 }
