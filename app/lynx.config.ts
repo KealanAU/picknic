@@ -1,7 +1,20 @@
+import { networkInterfaces } from 'node:os';
 import { defineConfig } from '@lynx-js/rspeedy';
 import { pluginQRCode } from '@lynx-js/qrcode-rsbuild-plugin';
 import { pluginTailwindCSS } from 'rsbuild-plugin-tailwindcss';
 import { pluginVueLynx } from 'vue-lynx/plugin';
+
+// Native bundles have no `location` global, so api/config.ts can't infer the
+// dev machine's address the way the web preview does. Inline the LAN IP the
+// QR code already points devices at, so they reach the local API too.
+function lanHost(): string {
+  for (const nets of Object.values(networkInterfaces())) {
+    for (const net of nets ?? []) {
+      if (net.family === 'IPv4' && !net.internal) return net.address;
+    }
+  }
+  return 'localhost';
+}
 
 export default defineConfig({
   // Declaring the `web` environment makes vue-lynx emit `main.web.bundle` and
@@ -15,6 +28,9 @@ export default defineConfig({
   source: {
     entry: {
       main: './src/index.ts',
+    },
+    define: {
+      'import.meta.env.PUBLIC_DEV_LAN_HOST': JSON.stringify(lanHost()),
     },
   },
   output: {

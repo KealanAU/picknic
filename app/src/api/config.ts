@@ -9,6 +9,11 @@ function devDefault(): string {
   const hasDeviceReachableHost = devBundleHost && devBundleHost !== '0.0.0.0';
 
   if (hasDeviceReachableHost) return `http://${devBundleHost}:${DEV_API_PORT}`;
+
+  // Native has no `location`; the dev build inlines the machine's LAN address
+  // (lynx.config.ts) so a device on the same network reaches the local API.
+  const lanHost = import.meta.env.PUBLIC_DEV_LAN_HOST as string | undefined;
+  if (lanHost) return `http://${lanHost}:${DEV_API_PORT}`;
   return `http://localhost:${DEV_API_PORT}`;
 }
 
