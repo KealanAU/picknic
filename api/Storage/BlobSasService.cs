@@ -23,6 +23,8 @@ public class StorageOptions
     /// <summary>
     /// Optional host to rewrite generated SAS URLs to (e.g. http://localhost:10000/devstoreaccount1),
     /// so a browser can reach Azurite even though the API talks to it as "azurite".
+    /// A "{host}" placeholder takes the current request's hostname, so a phone
+    /// that reached the API over the LAN gets blob URLs on that same address.
     /// </summary>
     public string PublicEndpoint { get; set; } = string.Empty;
 
@@ -45,7 +47,7 @@ public record UploadTarget(string UploadUrl, string BlobPath);
 /// server-named blob and expires at the upload window close.
 /// Members are virtual so integration tests can substitute an in-memory fake.
 /// </summary>
-public class BlobSasService(IOptions<StorageOptions> options)
+public class BlobSasService(IOptions<StorageOptions> options, IHttpContextAccessor? httpContext = null)
 {
     private readonly StorageOptions _opts = options.Value;
     private readonly bool _useConnectionString = !string.IsNullOrWhiteSpace(options.Value.ConnectionString);
@@ -205,6 +207,13 @@ public class BlobSasService(IOptions<StorageOptions> options)
         if (string.IsNullOrWhiteSpace(_opts.PublicEndpoint)) return url;
         var internalBase = service.Uri.ToString().TrimEnd('/');
         var publicBase = _opts.PublicEndpoint.TrimEnd('/');
+        if (publicBase.Contains("{host}", StringComparison.OrdinalIgnoreCase))
+        {
+            var requestHost = httpContext?.HttpContext?.Request.Host.Host;
+            publicBase = publicBase.Replace("{host}",
+                string.IsNullOrEmpty(requestHost) ? "localhost" : requestHost,
+                StringComparison.OrdinalIgnoreCase);
+        }
         return url.StartsWith(internalBase, StringComparison.OrdinalIgnoreCase)
             ? string.Concat(publicBase, url.AsSpan(internalBase.Length))
             : url;

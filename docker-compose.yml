@@ -44,9 +44,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: "Host=db;Database=picknic;Username=picknic;Password=picknic"
       # Photo storage via the Azurite emulator (account-key SAS). PublicEndpoint
-      # rewrites SAS URLs to localhost so the browser can reach the emulator.
+      # rewrites SAS URLs so clients can reach the emulator; {host} becomes the
+      # hostname the client called the API on (localhost, LAN IP, …).
       Storage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
-      Storage__PublicEndpoint: "http://localhost:10000/devstoreaccount1"
+      Storage__PublicEndpoint: "http://{host}:10000/devstoreaccount1"
       # Optional — leave unset to run without these integrations.
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}

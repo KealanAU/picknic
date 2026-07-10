@@ -131,6 +131,9 @@ builder.Services.AddAuthorizationBuilder()
         .RequireClaim(GuestTokenService.EventClaim));
 
 builder.Services.AddScoped<GuestTokenService>();
+// BlobSasService reads the request host to fill a {host} placeholder in
+// Storage:PublicEndpoint (dev: devices reach Azurite on the API's address).
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<BlobSasService>();
 
 // Film-look pipeline: codec + processor are stateless (singletons); the developer
