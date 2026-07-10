@@ -39,6 +39,14 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBackground
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # UIScene lifecycle (UIKit warns it will assert without it). One
+        # scene, no multi-window; SceneDelegate owns the window.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate
         NSCameraUsageDescription: Picknic uses the camera to snap photos for the party's roll.
         NSMicrophoneUsageDescription: The camera needs the microphone for video capture.
         NSLocalNetworkUsageDescription: Dev builds load Picknic from your Mac over the local network.

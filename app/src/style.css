@@ -28,9 +28,11 @@ html {
 }
 
 /* The LynxView fills the screen, so top-of-screen headers must clear the
- * status bar themselves. env() resolves to 0 in the web preview. */
+ * status bar themselves. The single top clearance for every screen — env()
+ * resolves to 0 both in the web preview AND on the iOS host, so the constant
+ * carries the whole Dynamic Island clearance (43px tuned on-device). */
 .safe-top {
-  padding-top: calc(env(safe-area-inset-top) + 27px);
+  padding-top: calc(env(safe-area-inset-top) + 43px);
 }
 
 :root {
