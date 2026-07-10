@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// Shared party-code display. Hosts get the share actions; guests just see
-// the code.
+// Party-code display with share actions — the guest screen no longer shows
+// the code big, so only the host roll uses this.
 import { VyButton } from '@vyui/kit';
 import { t } from '../theme/tokens';
 
@@ -25,7 +25,7 @@ defineEmits<{
       :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }"
       @tap="shareReady && $emit('share')"
     >
-      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
+      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, textTransform: 'uppercase', color: t.color.muted }">
         Party code
       </text>
       <text :style="{ fontFamily: t.font.display, fontSize: '46px', fontWeight: '300', lineHeight: '1', letterSpacing: '0.04em', color: t.color.blue }">
