@@ -10,9 +10,11 @@
 import {
   createCameraAdapter,
   getCameraInstallStatus,
+  invokeCameraViewMethod,
   type CameraAdapter,
   type CameraInstallStatus,
   type CapturePhotoOptions,
+  type PhotoFile,
 } from '@kealanau/lynx-camera';
 import { createMockCameraModule } from '@kealanau/lynx-camera/mock';
 import { DEV_SAMPLE_JPEG_BASE64 } from './devSamplePhoto';
@@ -103,6 +105,79 @@ export async function capturePhoto(options: CaptureOptions = {}): Promise<Captur
     width: photo.width ?? 0,
     height: photo.height ?? 0,
     mime: photo.mime ?? 'image/jpeg',
+  };
+}
+
+// Captures through a rendered <camera-view> (embedded live preview) instead
+// of the system camera sheet. Only valid when install status is 'installed' —
+// the element registers alongside the native module. base64 is requested
+// because putBlob needs the bytes in JS; JS can't read the temp-file path.
+export async function captureFromView(selector: string, options: CaptureOptions = {}): Promise<CapturedPhoto> {
+  const photo = await invokeCameraViewMethod<PhotoFile>(selector, 'capturePhoto', {
+    quality: options.quality ?? 0.9,
+    includeBase64: true,
+  });
+  if (!photo.base64) throw new Error('Camera returned no image data.');
+  return {
+    bytes: base64ToArrayBuffer(photo.base64),
+    width: photo.width ?? 0,
+    height: photo.height ?? 0,
+    mime: photo.mime ?? 'image/jpeg',
+  };
+}
+
+// Library pick goes through NativeModules directly: the installed package
+// tarball predates adapter.pickPhoto.
+// ponytail: switch to adapter.pickPhoto at the next tarball repack.
+declare const NativeModules:
+  | { CameraModule?: { pickPhoto?: (opts: Record<string, unknown>, cb: (r: unknown) => void) => void } }
+  | undefined;
+
+function nativePickPhoto() {
+  try {
+    if (typeof NativeModules === 'undefined') return null;
+    const mod = NativeModules?.CameraModule;
+    return mod && typeof mod.pickPhoto === 'function' ? mod : null;
+  } catch {
+    return null;
+  }
+}
+
+// Old host builds lack pickPhoto; hide the library button when this is false.
+export function isLibraryPickAvailable(): boolean {
+  return nativePickPhoto() !== null;
+}
+
+interface PickResult {
+  base64?: string;
+  width?: number;
+  height?: number;
+  mime?: string;
+  error?: { code?: string; message?: string } | string;
+}
+
+export async function pickFromLibrary(options: CaptureOptions = {}): Promise<CapturedPhoto> {
+  const mod = nativePickPhoto();
+  if (!mod) throw new Error('The photo library is not available in this runtime.');
+
+  const result = await new Promise<PickResult>((resolve) => {
+    mod.pickPhoto!({ quality: options.quality ?? 0.9 }, (r) => resolve((r ?? {}) as PickResult));
+  });
+
+  if (result.error) {
+    const err = result.error;
+    const code = typeof err === 'string' ? '' : (err.code ?? '');
+    const message = typeof err === 'string' ? err : (err.message ?? 'Could not load that photo.');
+    if (/cancel/i.test(code + message)) throw new CameraCancelled();
+    throw new Error(message);
+  }
+  if (!result.base64) throw new Error('Camera returned no image data.');
+
+  return {
+    bytes: base64ToArrayBuffer(result.base64),
+    width: result.width ?? 0,
+    height: result.height ?? 0,
+    mime: result.mime ?? 'image/jpeg',
   };
 }
 

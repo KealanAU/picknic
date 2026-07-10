@@ -6,7 +6,9 @@ import { storage } from '../api/storage';
 const INTRO_KEY = 'picknic.intro.seen';
 let introSeen = false;
 // Live-preview choice survives FAB remounts within a run; per-run on purpose.
-let livePreferred = false;
+// Defaults ON — the embedded camera is the product; the toggle and the system
+// sheet stay as the fallback until Live earns flash/zoom/focus (M5).
+let livePreferred = true;
 </script>
 
 <script setup lang="ts">
@@ -20,7 +22,15 @@ import { isApiError } from '../api/http';
 import { completeUpload, createUpload, putBlob } from '../api/photos';
 import { useCamera } from '../composables/useCamera';
 import { useToast } from '../composables/useToast';
-import { cameraInstallStatus, captureFromView, toDataUri, type CapturedPhoto } from '../native/camera';
+import {
+  cameraInstallStatus,
+  CameraCancelled,
+  captureFromView,
+  isLibraryPickAvailable,
+  pickFromLibrary,
+  toDataUri,
+  type CapturedPhoto,
+} from '../native/camera';
 import { t } from '../theme/tokens';
 import InstaxCard from './InstaxCard.vue';
 import { subStyle, titleStyle } from './onboarding/styles';
@@ -57,6 +67,10 @@ const justAdded = ref(false);
 const liveSupported = installCode === 'installed';
 const liveMode = ref(liveSupported && livePreferred);
 const liveBusy = ref(false);
+
+// Load-from-images: pick an existing photo into the same frame->caption->
+// upload flow. Hidden on hosts whose native module predates pickPhoto.
+const libraryAvailable = isLibraryPickAvailable();
 
 const previewUri = computed(() => (photo.value ? toDataUri(photo.value) : undefined));
 const uploading = computed(() => uploadStage.value !== 'idle');
@@ -109,6 +123,18 @@ async function snap() {
   } else if (camera.error.value) {
     // capture() returns null on cancel too; only real failures set error.
     toastError(camera.error.value);
+  }
+}
+
+async function pickImage() {
+  if (uploading.value || liveBusy.value || camera.busy.value) return;
+  justAdded.value = false;
+  try {
+    photo.value = await pickFromLibrary({ quality: 0.9 });
+    caption.value = '';
+  } catch (e) {
+    if (e instanceof CameraCancelled) return;
+    toastError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
   }
 }
 
@@ -193,7 +219,7 @@ async function addToRoll() {
           @touchend="closePressed = false"
           @touchcancel="closePressed = false"
         >
-          <VyIcon name="lucide:x" :style="{ width: '20px', height: '20px', color: t.color.ink }" />
+          <VyIcon name="lucide:x" :size="20" :color="t.color.ink" />
         </view>
         <view
           v-if="liveSupported"
@@ -276,37 +302,62 @@ async function addToRoll() {
 
       <view
         v-else-if="!photo"
-        :style="{
-          width: '76px',
-          height: '76px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: t.radius.pill,
-          borderWidth: '3px',
-          borderStyle: 'solid',
-          borderColor: t.color.ink,
-          opacity: shutterReady ? 1 : 0.4,
-          transform: shutterPressed && shutterReady ? 'scale(0.9)' : 'scale(1)',
-        }"
-        @tap="snap"
-        @touchstart="shutterPressed = true"
-        @touchend="shutterPressed = false"
-        @touchcancel="shutterPressed = false"
+        :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }"
       >
         <view
+          v-if="libraryAvailable"
           :style="{
-            width: '60px',
-            height: '60px',
+            width: '44px',
+            height: '44px',
+            marginRight: '28px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: t.radius.pill,
-            backgroundColor: t.color.blue,
+            backgroundColor: '#ffffff',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: t.color.line,
           }"
+          @tap="pickImage"
         >
-          <VyIcon name="lucide:camera" :style="{ width: '28px', height: '28px', color: '#ffffff' }" />
+          <VyIcon name="lucide:image" :size="20" :color="t.color.ink" />
         </view>
+        <view
+          :style="{
+            width: '76px',
+            height: '76px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: t.radius.pill,
+            borderWidth: '3px',
+            borderStyle: 'solid',
+            borderColor: t.color.ink,
+            opacity: shutterReady ? 1 : 0.4,
+            transform: shutterPressed && shutterReady ? 'scale(0.9)' : 'scale(1)',
+          }"
+          @tap="snap"
+          @touchstart="shutterPressed = true"
+          @touchend="shutterPressed = false"
+          @touchcancel="shutterPressed = false"
+        >
+          <view
+            :style="{
+              width: '60px',
+              height: '60px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: t.radius.pill,
+              backgroundColor: t.color.blue,
+            }"
+          >
+            <VyIcon name="lucide:camera" :size="28" color="#ffffff" />
+          </view>
+        </view>
+        <!-- Mirror of the library button so the shutter stays centered. -->
+        <view v-if="libraryAvailable" :style="{ width: '44px', marginLeft: '28px' }" />
       </view>
 
       <view v-else :style="{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }">
