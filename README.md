@@ -1,12 +1,17 @@
-# 🧺 Picknic
+<p align="center">
+  <img src="app/native/ios-host/Assets.xcassets/AppIcon.appiconset/icon-1024.png" alt="Picknic icon" width="110">
+</p>
 
-> Shared event camera. Guests snap photos through the app during a wedding or
-> party — everything pools into one roll that "develops" and is revealed at the
-> end of the event.
+<h1 align="center">Picknic</h1>
 
-**Stack:** .NET 10 / ASP.NET Core · Azure · Lynx (mobile) · Stripe · Terraform · Docker
+<p align="center">
+  Guests snap photos through the app during a wedding or party, and everything
+  pools into one shared roll that develops and is revealed at the end of the night.
+</p>
 
-`dotnet` · `aspnet-core` · `csharp` · `azure` · `vue` · `terraform` · `stripe`
+<p align="center">
+  <strong>.NET 10 / ASP.NET Core · Azure · Lynx (mobile) · Stripe · Terraform · Docker</strong>
+</p>
 
 ## Architecture
 
@@ -16,13 +21,14 @@
 | [`app/`](./app) | Native mobile app | Lynx via [`vue-lynx`](https://www.npmjs.com/package/vue-lynx) + [`@vyui`](https://www.npmjs.com/package/@vyui/kit) |
 | [`infra/`](./infra/terraform) | Azure infra as code | Terraform (Container Apps, ACR, Blob Storage) |
 
-Photo blobs live in **Azure Blob Storage**; metadata in the API's database.
-Payments are **optional** — set `Stripe__SecretKey` to enable event upgrades.
+Photo blobs live in **Azure Blob Storage**, and metadata lives in the API's
+database. Payments are optional; set `Stripe__SecretKey` to enable paid
+upgrades.
 
 ## Getting started
 
 ### API (.NET)
-Needs a Postgres instance. Spin one up with Docker, then run the API:
+The API needs a Postgres instance. Spin one up with Docker, then run the API:
 ```bash
 docker run -d --name picknic-db -p 5432:5432 \
   -e POSTGRES_DB=picknic -e POSTGRES_USER=picknic -e POSTGRES_PASSWORD=picknic \
@@ -61,8 +67,8 @@ fails, remove it once with `docker volume rm picknic_dpkeys`, then rebuild.
 
 ## Payments (Stripe)
 
-Optional. Without a key the `/api/checkout` endpoint returns `501` and the app
-runs fine. To enable:
+Payments are optional. Without a key the `/api/checkout` endpoint returns `501`
+and the app runs fine. To enable them:
 
 ```bash
 export STRIPE_SECRET_KEY=sk_test_...   # docker compose picks this up
@@ -78,13 +84,13 @@ terraform init
 terraform apply
 ```
 
-Provisions a resource group, Container Registry, Blob Storage, a PostgreSQL
-flexible server, Log Analytics, and a Container App running the API. Set
-`postgres_admin_password` in `terraform.tfvars`; the connection string is
+This provisions a resource group, Container Registry, Blob Storage, a
+PostgreSQL flexible server, Log Analytics, and a Container App running the API.
+Set `postgres_admin_password` in `terraform.tfvars`; the connection string is
 injected into the Container App as `ConnectionStrings__Default`.
 
 ## License
 
-[AGPL-3.0](./LICENSE) — the code is open, but running a hosted/closed
-competing service requires open-sourcing your changes. The official Picknic
-service and name are operated by the maintainer.
+Picknic is licensed under [AGPL-3.0](./LICENSE). The code is open, but running
+a hosted or closed competing service requires open-sourcing your changes. The
+official Picknic service and name are operated by the maintainer.
