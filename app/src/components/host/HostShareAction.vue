@@ -36,7 +36,7 @@ defineEmits<{
     >
       <VyIcon :name="icon" :style="{ width: '26px', height: '26px', color: color || 'currentColor' }" />
     </view>
-    <text :style="{ width: '64px', textAlign: 'center', fontFamily: t.font.body, fontSize: '12px', lineHeight: '1.1', letterSpacing: t.tracking, color: t.color.ink }">
+    <text :style="{ width: '64px', textAlign: 'center', fontFamily: t.font.body, fontSize: '12px', lineHeight: '1.1', letterSpacing: t.trackingSmall, color: t.color.ink }">
       {{ label }}
     </text>
   </view>

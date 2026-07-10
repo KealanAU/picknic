@@ -67,7 +67,7 @@ const emit = defineEmits<{
         <view :style="{ marginTop: '14px', height: '1px', backgroundColor: t.color.line }" />
 
         <view :style="{ marginTop: '14px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }">
-          <text :style="{ flex: 1, fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.tracking, color: t.color.muted }">
+          <text :style="{ flex: 1, fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.trackingSmall, color: t.color.muted }">
             {{ user?.email }}
           </text>
           <VyButton size="sm" variant="ghost" @tap="emit('logout')">

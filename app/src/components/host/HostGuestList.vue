@@ -74,7 +74,7 @@ function chipTextStyle(active: boolean) {
   return {
     fontFamily: t.font.body,
     fontSize: '12px',
-    letterSpacing: t.tracking,
+    letterSpacing: t.trackingSmall,
     color: active ? t.color.blue : t.color.muted,
   } as const;
 }
@@ -85,7 +85,7 @@ function chipTextStyle(active: boolean) {
        anchors that container gap would treat as children. -->
   <view :style="{ display: 'flex', flexDirection: 'column' }">
     <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '4px' }">
-      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
+      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, textTransform: 'uppercase', color: t.color.muted }">
         Guests · {{ joinedCount }}
       </text>
       <VyButton size="sm" variant="ghost" :loading="busy" @tap="$emit('refresh')">
@@ -106,7 +106,7 @@ function chipTextStyle(active: boolean) {
 
     <text
       v-if="!visibleGuests.length"
-      :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.muted, paddingTop: '4px', paddingBottom: '8px' }"
+      :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.muted, paddingTop: '4px', paddingBottom: '8px' }"
     >
       {{ emptyLabel }}
     </text>
@@ -137,11 +137,11 @@ function chipTextStyle(active: boolean) {
               <text :style="{ fontFamily: t.font.body, fontSize: '15px', letterSpacing: t.tracking, color: t.color.ink }">
                 {{ guest.displayName }}
               </text>
-              <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, color: t.color.muted }">
+              <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, color: t.color.muted }">
                 {{ guest.isHost ? 'That’s you' : guest.email || `Joined ${joinedLabel(guest.joinedAt)}` }}
               </text>
             </view>
-            <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, color: t.color.muted }">
+            <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, color: t.color.muted }">
               {{ guest.removed ? 'Removed' : `${guest.photos} photos` }}
             </text>
           </view>
@@ -158,7 +158,7 @@ function chipTextStyle(active: boolean) {
               }"
               @tap="remove(guest)"
             >
-              <text :style="{ fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.tracking, textTransform: 'uppercase', color: '#ffffff' }">
+              <text :style="{ fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.trackingSmall, textTransform: 'uppercase', color: '#ffffff' }">
                 {{ pendingRemoveId === guest.id ? 'Confirm' : 'Remove' }}
               </text>
             </view>

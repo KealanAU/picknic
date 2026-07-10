@@ -18,7 +18,7 @@ withDefaults(defineProps<{ label?: string; color?: string }>(), {
         fontFamily: t.font.body,
         fontSize: '14px',
         fontWeight: '300',
-        letterSpacing: t.tracking,
+        letterSpacing: t.trackingSmall,
         textTransform: 'uppercase',
         color: t.color.blue,
       }"

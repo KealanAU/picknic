@@ -12,7 +12,7 @@ export const titleStyle = {
 export const subStyle = {
   fontFamily: t.font.body,
   fontSize: '14px',
-  letterSpacing: t.tracking,
+  letterSpacing: t.trackingSmall,
   color: t.color.muted,
 } as const;
 

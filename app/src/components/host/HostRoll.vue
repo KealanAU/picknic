@@ -327,7 +327,7 @@ onMounted(() => {
 
         <VyCard v-if="!latestEvent" :style="{ width: '100%', marginTop: '14px' }">
           <view :style="{ display: 'flex', flexDirection: 'column' }">
-            <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.muted }">
+            <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.muted }">
               Name it, date it, get your party code.
             </text>
             <VyButton color="primary" size="lg" block :style="{ marginTop: '12px' }" @tap="settingsTrayOpen = true">

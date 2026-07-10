@@ -42,7 +42,7 @@ function toggle() {
     >
       <text v-if="modelValue" :style="{ color: '#fff', fontSize: checkFontSize, lineHeight: boxSize }">✓</text>
     </view>
-    <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.inkSoft }">
+    <text :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.inkSoft }">
       Remember me
     </text>
   </view>

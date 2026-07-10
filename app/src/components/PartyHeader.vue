@@ -24,13 +24,13 @@ defineEmits<{
        fragment anchors that container gap would treat as children. -->
   <view :style="{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }">
     <view :style="{ flex: 1, display: 'flex', flexDirection: 'column' }">
-      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
+      <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, textTransform: 'uppercase', color: t.color.muted }">
         {{ kicker }}
       </text>
       <text :style="{ marginTop: '4px', fontFamily: t.font.display, fontSize: '34px', fontWeight: '300', lineHeight: '1', letterSpacing: t.tracking, color: t.color.ink }">
         {{ title }}
       </text>
-      <text v-if="date" :style="{ marginTop: '4px', fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.tracking, color: t.color.muted }">
+      <text v-if="date" :style="{ marginTop: '4px', fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.trackingSmall, color: t.color.muted }">
         {{ date }}
       </text>
     </view>

@@ -25,6 +25,8 @@ export const t = {
     hand: "'Founders Grotesk', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
   },
   tracking: '-0.02em',
+  // Small text (<=14px) reads cramped with negative tracking; use this instead.
+  trackingSmall: '0em',
   radius: {
     sm: '6px',
     md: '10px',

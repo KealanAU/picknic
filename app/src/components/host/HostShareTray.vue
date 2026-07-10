@@ -85,7 +85,7 @@ const inviteImage = computed(() => {
     <template #default>
       <view :style="{ display: 'flex', flexDirection: 'column', gap: '14px' }">
         <view :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }">
-          <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.tracking, textTransform: 'uppercase', color: t.color.muted }">
+          <text :style="{ fontFamily: t.font.body, fontSize: '12px', letterSpacing: t.trackingSmall, textTransform: 'uppercase', color: t.color.muted }">
             Party code
           </text>
           <text :style="{ fontFamily: t.font.display, fontSize: '46px', fontWeight: '300', lineHeight: '1', letterSpacing: '0.04em', color: t.color.blue }">
