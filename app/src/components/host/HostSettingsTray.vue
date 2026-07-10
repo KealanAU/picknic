@@ -32,18 +32,19 @@ const emit = defineEmits<{
     handle
     keyboard-aware
     :ui="{
-      content: 'z-[1001] pk-tray-radius pk-onboarding-tray-surface',
-      morph: 'pk-onboarding-tray-surface',
-      viewport: 'pk-onboarding-tray-surface',
-      body: 'px-4 pb-5 pk-onboarding-tray-surface',
+      content: 'z-[1001] pk-tray-radius pk-onboarding-tray-surface pk-onboarding-tray-content',
+      morph: 'pk-onboarding-tray-surface pk-onboarding-tray-scroll-shell',
+      viewport: 'pk-onboarding-tray-surface pk-onboarding-tray-scroll-shell',
+      body: 'px-4 pb-5 pk-onboarding-tray-surface pk-onboarding-tray-scroll-body',
       footer: 'pk-onboarding-tray-surface',
     }"
     @update:open="emit('update:open', $event)"
   >
     <template #default>
+      <scroll-view scroll-orientation="vertical" :enable-scroll="true" class="pk-onboarding-scroll-view">
       <!-- Margin spacing instead of gap: the v-if guest section leaves a fragment
            anchor that container gap would treat as a child. -->
-      <view :style="{ display: 'flex', flexDirection: 'column' }">
+      <view class="pk-onboarding-scroll-content" :style="{ display: 'flex', flexDirection: 'column' }">
         <text :style="{ fontFamily: t.font.display, fontSize: '26px', fontWeight: '300', lineHeight: '1.05', letterSpacing: t.tracking, color: t.color.ink }">
           {{ event ? 'Party settings' : 'Make a party' }}
         </text>
@@ -75,6 +76,7 @@ const emit = defineEmits<{
           </VyButton>
         </view>
       </view>
+      </scroll-view>
     </template>
   </VyTray>
 </template>
