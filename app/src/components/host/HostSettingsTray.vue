@@ -71,9 +71,7 @@ const emit = defineEmits<{
           <text :style="{ flex: 1, fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.trackingSmall, color: t.color.muted }">
             {{ user?.email }}
           </text>
-          <VyButton size="sm" variant="ghost" @tap="emit('logout')">
-            Log out
-          </VyButton>
+          <VyButton size="sm" variant="ghost" label="Log out" @tap="emit('logout')" />
         </view>
       </view>
       </scroll-view>
