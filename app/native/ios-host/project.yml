@@ -49,19 +49,25 @@ targets:
           NSAllowsArbitraryLoads: true
         UIAppFonts:
           - Comico-Regular.ttf
-    preBuildScripts:
-      - name: Generate DevServerHost
+    postBuildScripts:
+      # Debug only: write the Mac's current LAN IP into the built app as
+      # DevServerHost.txt; ViewController reads it to discover the rspeedy
+      # dev server. Writes to the build products dir, never the source tree,
+      # so nothing generated lands in the repo. Skipped in Release (no dev
+      # server, and no LAN IP in the shipped product).
+      - name: Write dev server host
         basedOnDependencyAnalysis: false
         script: |
+          set -u
+          if [ "${CONFIGURATION}" = "Release" ]; then
+            echo "Release build — skipping DevServerHost.txt."
+            exit 0
+          fi
           ip=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo localhost)
-          out="${SRCROOT}/HostSources/DevServerHost.generated.swift"
-          body="// Overwritten by the \"Generate DevServerHost\" build phase (see project.yml)
-          // with the Mac's current LAN IP at build time. Committed with a localhost
-          // default so the project generates on a fresh checkout; don't edit by hand.
-          let devServerHost = \"${ip}\""
-          current=$(cat "$out" 2>/dev/null || true)
-          [ "$current" = "$body" ] || printf '%s\n' "$body" > "$out"
-    postBuildScripts:
+          DEST_DIR="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          mkdir -p "${DEST_DIR}"
+          printf '%s\n' "${ip}" > "${DEST_DIR}/DevServerHost.txt"
+          echo "Dev server host: ${ip}"
       # Release only: build the JS app and copy dist/main.lynx.bundle into the
       # .app so Release/TestFlight builds run without a dev server. Debug is a
       # no-op (Debug loads over HTTP from the rspeedy dev server instead).
@@ -121,7 +127,7 @@ targets:
         SWIFT_VERSION: '5.9'
         IPHONEOS_DEPLOYMENT_TARGET: '13.0'
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        # The DevServerHost build phase writes into SRCROOT.
+        # The Embed Lynx bundle phase runs pnpm build in the repo tree.
         ENABLE_USER_SCRIPT_SANDBOXING: 'NO'
         # Set your team in Xcode (Signing & Capabilities) for device installs;
         # simulator builds need no signing.

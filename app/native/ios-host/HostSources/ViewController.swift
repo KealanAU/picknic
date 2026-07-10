@@ -3,12 +3,22 @@ import UIKit
 
 #if DEBUG
 // Set this to a full bundle URL to skip discovery (e.g. a tunnel). When nil,
-// the app scans `devServerHost` (injected at build time from the Mac's LAN
-// IP — see DevServerHost.generated.swift) across the rspeedy port range and
-// loads the first dev server that answers. Debug-only: Release builds load
-// the embedded main.lynx.bundle instead (see loadEmbeddedBundle()).
+// the app scans `devServerHost` across the rspeedy port range and loads the
+// first dev server that answers. Debug-only: Release builds load the
+// embedded main.lynx.bundle instead (see loadEmbeddedBundle()).
 private let manualBundleURL: String? = nil
 private let devServerPorts = Array(3000...3010)
+
+// The Mac's LAN IP, written into the app bundle at build time by the
+// "Write dev server host" phase (see project.yml). localhost fallback in
+// case the phase didn't run.
+private let devServerHost: String = {
+    guard let url = Bundle.main.url(forResource: "DevServerHost", withExtension: "txt"),
+          let contents = try? String(contentsOf: url, encoding: .utf8)
+    else { return "localhost" }
+    let host = contents.trimmingCharacters(in: .whitespacesAndNewlines)
+    return host.isEmpty ? "localhost" : host
+}()
 #endif
 
 class ViewController: UIViewController {

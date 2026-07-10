@@ -34,9 +34,9 @@ the sources of truth.
 
 ## Run on your iPhone
 
-1. `pnpm dev` in `app/` — no URL to copy: a build phase injects the Mac's
-   LAN IP (`DevServerHost.generated.swift`), and at launch the app scans
-   ports 3000–3010 on that host and loads the first dev server it finds.
+1. `pnpm dev` in `app/` — no URL to copy: a build phase writes the Mac's
+   LAN IP into the app bundle (`DevServerHost.txt`), and at launch the app
+   scans ports 3000–3010 on that host and loads the first dev server it finds.
    If the Mac changes networks, just rebuild. To pin an exact URL (e.g. a
    tunnel), set `manualBundleURL` at the top of
    `HostSources/ViewController.swift`.
