@@ -28,6 +28,8 @@ const camera = useCamera();
 const { toastError } = useToast();
 
 const photo = ref<CapturedPhoto | null>(null);
+const closePressed = ref(false);
+const shutterPressed = ref(false);
 const caption = ref('');
 const uploadStage = ref<'idle' | 'requesting' | 'uploading' | 'finalizing'>('idle');
 const addedCount = ref(0);
@@ -84,7 +86,9 @@ async function addToRoll() {
 </script>
 
 <template>
+  <!-- ponytail: no exit animation; v-if unmount is a hard cut -->
   <view
+    class="camera-screen-enter"
     :style="{
       position: 'fixed',
       top: '0',
@@ -110,12 +114,17 @@ async function addToRoll() {
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: t.color.line,
+          opacity: uploading ? 0.4 : 1,
+          transform: closePressed ? 'scale(0.92)' : 'scale(1)',
         }"
         @tap="!uploading && emit('close')"
+        @touchstart="closePressed = true"
+        @touchend="closePressed = false"
+        @touchcancel="closePressed = false"
       >
         <VyIcon name="lucide:x" :style="{ width: '20px', height: '20px', color: t.color.ink }" />
       </view>
-      <text :style="{ fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.tracking, color: t.color.muted }">
+      <text :style="{ fontFamily: t.font.body, fontSize: '13px', letterSpacing: t.trackingSmall, color: t.color.muted }">
         {{ addedCount ? `${addedCount} on the roll` : title }}
       </text>
     </view>
@@ -123,7 +132,7 @@ async function addToRoll() {
     <!-- Margin spacing throughout: children are conditional and vue-lynx
          renders v-if anchors as real nodes, so container gap would double up. -->
     <view :style="{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }">
-      <InstaxCard :src="previewUri" :caption="photo ? caption || ' ' : undefined" :width="300" />
+      <InstaxCard :src="previewUri" :caption="photo ? caption || ' ' : undefined" :width="300" develop />
 
       <VyInput
         v-if="photo"
@@ -137,7 +146,7 @@ async function addToRoll() {
 
       <text
         v-if="justAdded && !photo"
-        :style="{ marginTop: '14px', fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.blue }"
+        :style="{ marginTop: '14px', fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.blue }"
       >
         On the roll ✓
       </text>
@@ -146,7 +155,7 @@ async function addToRoll() {
     <view :style="{ height: '150px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }">
       <text
         v-if="!camera.available"
-        :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.tracking, color: t.color.muted }"
+        :style="{ fontFamily: t.font.body, fontSize: '14px', letterSpacing: t.trackingSmall, color: t.color.muted }"
       >
         Camera isn't available on this device.
       </text>
@@ -164,8 +173,12 @@ async function addToRoll() {
           borderStyle: 'solid',
           borderColor: t.color.ink,
           opacity: shutterReady ? 1 : 0.4,
+          transform: shutterPressed && shutterReady ? 'scale(0.9)' : 'scale(1)',
         }"
         @tap="snap"
+        @touchstart="shutterPressed = true"
+        @touchend="shutterPressed = false"
+        @touchcancel="shutterPressed = false"
       >
         <view
           :style="{
@@ -193,3 +206,19 @@ async function addToRoll() {
     </view>
   </view>
 </template>
+
+<style>
+.camera-screen-enter {
+  animation: camera-screen-rise 200ms ease-out;
+}
+@keyframes camera-screen-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

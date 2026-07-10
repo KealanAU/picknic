@@ -9,8 +9,9 @@ const props = withDefaults(
     caption?: string;
     print?: string;
     width?: number;
+    develop?: boolean;
   }>(),
-  { print: 'polaroid', width: 300 },
+  { print: 'polaroid', width: 300, develop: false },
 );
 
 interface Layout {
@@ -77,9 +78,30 @@ const captionStyle = computed(() => ({
 <template>
   <view :style="cardStyle">
     <view :style="windowStyle">
-      <image v-if="src" :src="src" mode="aspectFill" :style="{ width: '100%', height: '100%' }" />
-      <text v-else :style="{ fontSize: '13px', letterSpacing: '-0.02em', color: '#6b7480' }">No photo yet</text>
+      <!-- v-if remount per new photo replays the develop animation; no watcher needed. -->
+      <image
+        v-if="src"
+        :src="src"
+        mode="aspectFill"
+        :class="develop ? 'instax-card-develop' : undefined"
+        :style="{ width: '100%', height: '100%' }"
+      />
+      <text v-else :style="{ fontSize: '13px', letterSpacing: '0em', color: '#6b7480' }">No photo yet</text>
     </view>
     <text v-if="framed && caption" :style="captionStyle">{{ caption }}</text>
   </view>
 </template>
+
+<style>
+.instax-card-develop {
+  animation: instax-card-develop-fade 900ms ease-out;
+}
+@keyframes instax-card-develop-fade {
+  from {
+    opacity: 0.08;
+  }
+  to {
+    opacity: 1;
+  }
+}
+</style>
