@@ -154,18 +154,18 @@ function dayTextClass(day: CalendarDay) {
     <view :class="open ? 'pk-dp-trigger pk-dp-trigger--open' : 'pk-dp-trigger'" @tap="toggle">
       <text class="pk-dp-value">{{ rangeLabel }}</text>
       <view class="pk-dp-icon-slot">
-        <VyIcon name="streamline-freehand:calendar-grid" :style="{ color: open ? t.color.ink : t.color.blue }" />
+        <VyIcon name="streamline-freehand:calendar-grid" :color="open ? t.color.ink : t.color.blue" />
       </view>
     </view>
 
     <view v-if="open" class="pk-dp-panel">
       <view class="pk-dp-panel-head">
         <view class="pk-dp-nav" @tap="moveMonth(-1)">
-          <VyIcon name="lucide:chevron-left" :style="{ color: t.color.ink }" />
+          <VyIcon name="lucide:chevron-left" :color="t.color.ink" />
         </view>
         <text class="pk-dp-month">{{ monthLabel }}</text>
         <view class="pk-dp-nav" @tap="moveMonth(1)">
-          <VyIcon name="lucide:chevron-right" :style="{ color: t.color.ink }" />
+          <VyIcon name="lucide:chevron-right" :color="t.color.ink" />
         </view>
       </view>
 

@@ -81,7 +81,7 @@ onMounted(async () => {
       @touchend="fabPressed = false"
       @touchcancel="fabPressed = false"
     >
-      <VyIcon name="lucide:camera" :style="{ width: '30px', height: '30px', color: '#ffffff' }" />
+      <VyIcon name="lucide:camera" :size="30" color="#ffffff" />
     </view>
 
     <CameraScreen

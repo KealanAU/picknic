@@ -3,6 +3,7 @@ import { VyButton, VyTray } from '@vyui/kit';
 import type { AccountInfo } from '../../api/auth';
 import type { HostEvent, HostGuest } from '../../api/hostEvents';
 import { t } from '../../theme/tokens';
+import { titleStyle } from '../onboarding/styles';
 import HostEventSettings from './HostEventSettings.vue';
 import HostGuestList from './HostGuestList.vue';
 
@@ -45,7 +46,7 @@ const emit = defineEmits<{
       <!-- Margin spacing instead of gap: the v-if guest section leaves a fragment
            anchor that container gap would treat as a child. -->
       <view class="pk-onboarding-scroll-content" :style="{ display: 'flex', flexDirection: 'column' }">
-        <text :style="{ fontFamily: t.font.display, fontSize: '26px', fontWeight: '300', lineHeight: '1.05', letterSpacing: t.tracking, color: t.color.ink }">
+        <text :style="titleStyle">
           {{ event ? 'Party settings' : 'Make a party' }}
         </text>
 

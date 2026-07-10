@@ -1,9 +1,11 @@
 import { t } from '../../theme/tokens';
 
+// The one tray heading — every sheet title in the app uses this scale.
+// (Screen headers are PartyHeader's 34px; trays sit one step below.)
 export const titleStyle = {
   fontFamily: t.font.display,
-  fontSize: '30px',
-  fontWeight: '400',
+  fontSize: '26px',
+  fontWeight: '300',
   lineHeight: '1.05',
   letterSpacing: t.tracking,
   color: t.color.ink,

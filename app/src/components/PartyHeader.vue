@@ -52,7 +52,7 @@ defineEmits<{
       }"
       @tap="$emit('settings')"
     >
-      <VyIcon name="streamline-freehand:settings-cog" :style="{ width: '20px', height: '20px', color: t.color.ink }" />
+      <VyIcon name="streamline-freehand:settings-cog" :size="20" :color="t.color.ink" />
     </view>
   </view>
 </template>

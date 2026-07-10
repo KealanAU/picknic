@@ -84,7 +84,7 @@ async function submitHost() {
         >
           <template #trailing="{ iconColor }">
             <view @tap="showPassword = !showPassword" :style="{ padding: '4px' }">
-              <VyIcon :name="showPassword ? 'streamline:view-eye-off' : 'streamline:view-eye-1'" :style="{ color: iconColor }" />
+              <VyIcon :name="showPassword ? 'streamline:view-eye-off' : 'streamline:view-eye-1'" :color="iconColor" />
             </view>
           </template>
         </VyInput>
