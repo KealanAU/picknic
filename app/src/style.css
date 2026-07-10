@@ -30,7 +30,7 @@ html {
 /* The LynxView fills the screen, so top-of-screen headers must clear the
  * status bar themselves. env() resolves to 0 in the web preview. */
 .safe-top {
-  padding-top: calc(env(safe-area-inset-top) + 12px);
+  padding-top: calc(env(safe-area-inset-top) + 27px);
 }
 
 :root {
