@@ -15,7 +15,6 @@
     "vue-lynx": "^0.4.0"
   },
   "devDependencies": {
-    "@iconify-json/streamline-freehand": "^1.2.1",
     "@lynx-js/qrcode-rsbuild-plugin": "0.4.7",
     "@lynx-js/rspeedy": "^0.13.5",
     "@lynx-js/tailwind-preset": "^0.5.0",

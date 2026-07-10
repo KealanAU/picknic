@@ -1,5 +1,4 @@
 // Capture concern only: wraps the native camera boundary in reactive state.
-// Compose with usePhotoUpload.
 import { readonly, ref } from 'vue';
 import {
   capturePhoto,

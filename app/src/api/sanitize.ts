@@ -7,5 +7,3 @@ export function sanitizeIdentifier(value: string): string {
 export function sanitizeEmail(value: string): string {
   return sanitizeIdentifier(value).toLowerCase();
 }
-
-export const sanitizeUsername = sanitizeIdentifier;

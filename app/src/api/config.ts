@@ -1,5 +1,5 @@
-// Base URL of the Picknic API. Precedence: setApiBase() > PUBLIC_API_BASE >
-// dev/prod defaults. Only PUBLIC_-prefixed env vars are inlined by Rsbuild.
+// Base URL of the Picknic API. Precedence: PUBLIC_API_BASE > dev/prod
+// defaults. Only PUBLIC_-prefixed env vars are inlined by Rsbuild.
 const DEV_API_PORT = '8080';
 const PROD_DEFAULT = 'https://api.picknic.app';
 
@@ -23,11 +23,7 @@ function resolveDefault(): string {
   return import.meta.env.PROD ? PROD_DEFAULT : devDefault();
 }
 
-let base = resolveDefault().replace(/\/+$/, '');
-
-export function setApiBase(url: string): void {
-  base = url.replace(/\/+$/, '');
-}
+const base = resolveDefault().replace(/\/+$/, '');
 
 export function getApiBase(): string {
   return base;
