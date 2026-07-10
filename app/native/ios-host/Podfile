@@ -1,0 +1,46 @@
+# Podfile for the PicknicHost dev shell. Copy it next to PicknicHost.xcodeproj
+# (see README.md step 2) and run `pod install`; open the .xcworkspace after.
+source 'https://cdn.cocoapods.org/'
+
+platform :ios, '13.0'
+
+# LynxCameraModule.swift does `import Lynx`, so the pods must build as
+# Swift-importable modules. If pod install/build fails on "non-modular
+# header" errors, see README.md "If modular headers fail".
+use_modular_headers!
+
+target 'PicknicHost' do
+  # Pod versions from the "Integrate with Existing Apps" guide on lynxjs.org;
+  # if resolution fails, re-check the guide for the current compatible set.
+  pod 'Lynx', '3.9.0', :subspecs => ['Framework']
+  # PrimJS versions don't track Lynx's; this is what Lynx 3.9.0 resolves to.
+  # CocoaPods requires prerelease versions to be pinned explicitly.
+  pod 'PrimJS', '3.8.0-alpha.6', :subspecs => ['quickjs', 'napi']
+
+  # Host services: image (backed by SDWebImage), logging, HTTP.
+  pod 'LynxService', '3.9.0', :subspecs => ['Image', 'Log', 'Http']
+  pod 'SDWebImage', '5.15.5'
+  pod 'SDWebImageWebPCoder', '0.11.0'
+
+  # Extended built-in elements (<x-input> etc.) that vyui components render.
+  pod 'XElement', '3.9.0'
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      # Lynx pods trip warnings on recent Xcode; don't let them fail the build.
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+    end
+    # The Lynx podspec sets -Werror as per-file compiler flags, which fails on
+    # Xcode 26 over iOS-13-era deprecations inside Lynx itself. Neutralize it.
+    next unless target.respond_to?(:source_build_phase)
+    target.source_build_phase.files.each do |file|
+      flags = file.settings && file.settings['COMPILER_FLAGS']
+      next unless flags && flags.include?('-Werror')
+      file.settings['COMPILER_FLAGS'] = flags.gsub('-Werror', '-Wno-error')
+    end
+  end
+end

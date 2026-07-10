@@ -1,0 +1,128 @@
+# XcodeGen spec for the PicknicHost dev shell.
+# Workflow: `xcodegen generate` → `pod install` → open PicknicHost.xcworkspace.
+name: PicknicHost
+options:
+  bundleIdPrefix: app.picknic
+  deploymentTarget:
+    iOS: '13.0'
+  createIntermediateGroups: true
+schemes:
+  PicknicHost:
+    build:
+      targets:
+        PicknicHost: all
+    run:
+      config: Debug
+targets:
+  PicknicHost:
+    type: application
+    platform: iOS
+    sources:
+      - path: HostSources
+      # The lynx-camera package's native sources, referenced straight from the
+      # package repo (sibling checkout of picknic in ~/Documents/Code) so
+      # compile fixes land at the source of truth. Swap to
+      # ../../node_modules/@kealanau/lynx-camera/ios once the package is
+      # consumed from npm instead of a local tarball.
+      - path: ../../../../lynx-camera/ios
+        name: LynxCamera
+        excludes:
+          - 'README.md'
+      - path: ../ios/Resources/Fonts/Comico-Regular.ttf
+        buildPhase: resources
+      - path: Assets.xcassets
+    info:
+      path: Info.plist
+      properties:
+        # Launch screen matches the app's cream so there is no black flash
+        # between launch and the first Lynx paint.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSCameraUsageDescription: Picknic uses the camera to snap photos for the party's roll.
+        NSMicrophoneUsageDescription: The camera needs the microphone for video capture.
+        NSLocalNetworkUsageDescription: Dev builds load Picknic from your Mac over the local network.
+        NSAppTransportSecurity:
+          # Dev shell only: the bundle and API are plain http on the LAN.
+          # Both this and NSLocalNetworkUsageDescription are deleted from the
+          # built product in Release by the "Strip dev Info.plist keys" phase.
+          NSAllowsArbitraryLoads: true
+        UIAppFonts:
+          - Comico-Regular.ttf
+    preBuildScripts:
+      - name: Generate DevServerHost
+        basedOnDependencyAnalysis: false
+        script: |
+          ip=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo localhost)
+          out="${SRCROOT}/HostSources/DevServerHost.generated.swift"
+          body="// Overwritten by the \"Generate DevServerHost\" build phase (see project.yml)
+          // with the Mac's current LAN IP at build time. Committed with a localhost
+          // default so the project generates on a fresh checkout; don't edit by hand.
+          let devServerHost = \"${ip}\""
+          current=$(cat "$out" 2>/dev/null || true)
+          [ "$current" = "$body" ] || printf '%s\n' "$body" > "$out"
+    postBuildScripts:
+      # Release only: build the JS app and copy dist/main.lynx.bundle into the
+      # .app so Release/TestFlight builds run without a dev server. Debug is a
+      # no-op (Debug loads over HTTP from the rspeedy dev server instead).
+      - name: Embed Lynx bundle
+        basedOnDependencyAnalysis: false
+        script: |
+          set -u
+          if [ "${CONFIGURATION}" != "Release" ]; then
+            echo "Debug build — skipping embedded Lynx bundle (loads from the dev server)."
+            exit 0
+          fi
+          APP_DIR="${SRCROOT}/../.."
+          BUNDLE_SRC="${APP_DIR}/dist/main.lynx.bundle"
+          # Xcode script phases get a minimal PATH; node is managed via fnm.
+          export PATH="/opt/homebrew/bin:/usr/local/bin:${HOME}/.local/share/fnm/aliases/default/bin:${PATH}"
+          PNPM="$(command -v pnpm || true)"
+          if [ -n "${PNPM}" ]; then
+            echo "Building Lynx bundle: ${PNPM} build (in ${APP_DIR})"
+            if ! (cd "${APP_DIR}" && "${PNPM}" build); then
+              echo "error: \`pnpm build\` failed in ${APP_DIR} — fix the JS build, or run it manually and rebuild."
+              exit 1
+            fi
+          elif [ -f "${BUNDLE_SRC}" ]; then
+            echo "warning: pnpm not found on PATH — embedding the existing ${BUNDLE_SRC} (may be stale). Run \`pnpm build\` in picknic/app to refresh it."
+          else
+            echo "error: pnpm not found on PATH and no bundle at ${BUNDLE_SRC}. Run \`pnpm build\` in picknic/app manually, then rebuild."
+            exit 1
+          fi
+          if [ ! -f "${BUNDLE_SRC}" ]; then
+            echo "error: ${BUNDLE_SRC} not found after \`pnpm build\` — expected \`rspeedy build\` to write it. Run \`pnpm build\` in picknic/app and check its output."
+            exit 1
+          fi
+          DEST_DIR="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          mkdir -p "${DEST_DIR}"
+          cp "${BUNDLE_SRC}" "${DEST_DIR}/main.lynx.bundle"
+          echo "Embedded $(du -h "${DEST_DIR}/main.lynx.bundle" | cut -f1 | tr -d ' ') main.lynx.bundle into ${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+      # Release only: the ATS exemption and local-network prompt exist purely
+      # for the Debug dev-server flow — strip them from the shipped product.
+      - name: Strip dev Info.plist keys
+        basedOnDependencyAnalysis: false
+        script: |
+          set -u
+          if [ "${CONFIGURATION}" != "Release" ]; then
+            echo "Debug build — keeping ATS/local-network dev keys."
+            exit 0
+          fi
+          PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+          if [ ! -f "${PLIST}" ]; then
+            echo "error: ${PLIST} not found — expected the processed Info.plist in the product."
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "${PLIST}" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Delete :NSLocalNetworkUsageDescription" "${PLIST}" 2>/dev/null || true
+          echo "Stripped NSAppTransportSecurity and NSLocalNetworkUsageDescription from ${INFOPLIST_PATH}"
+    settings:
+      base:
+        SWIFT_VERSION: '5.9'
+        IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # The DevServerHost build phase writes into SRCROOT.
+        ENABLE_USER_SCRIPT_SANDBOXING: 'NO'
+        # Set your team in Xcode (Signing & Capabilities) for device installs;
+        # simulator builds need no signing.
+        CODE_SIGN_STYLE: Automatic
