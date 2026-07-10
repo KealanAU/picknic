@@ -135,18 +135,29 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // Lynx's runtime doesn't guarantee atob/btoa, so code base64 ourselves.
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+// Missing/padding positions decode as 0, never -1: `B64.indexOf(undefined)`
+// is -1, and OR-ing -1 corrupted the final 1-2 bytes of every padded payload
+// (JPEG tails decoded as 0xFF), which broke most real captures.
+function sextet(c: string | undefined): number {
+  if (c === undefined) return 0;
+  const v = B64.indexOf(c);
+  return v < 0 ? 0 : v;
+}
+
 function base64ToArrayBuffer(b64: string): ArrayBuffer {
-  const clean = b64.replace(/[^A-Za-z0-9+/]/g, '');
-  const pad = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
-  const len = (clean.length / 4) * 3 - pad;
+  // Strip whitespace/padding; the byte length falls out of the remaining
+  // character count (4 chars -> 3 bytes, 3 -> 2, 2 -> 1).
+  const body = b64.replace(/[^A-Za-z0-9+/]/g, '');
+  const len = Math.floor((body.length * 3) / 4);
   const out = new Uint8Array(len);
   let p = 0;
-  for (let i = 0; i < clean.length; i += 4) {
+  for (let i = 0; i < body.length; i += 4) {
     const n =
-      (B64.indexOf(clean[i]) << 18) |
-      (B64.indexOf(clean[i + 1]) << 12) |
-      (B64.indexOf(clean[i + 2]) << 6) |
-      B64.indexOf(clean[i + 3]);
+      (sextet(body[i]) << 18) |
+      (sextet(body[i + 1]) << 12) |
+      (sextet(body[i + 2]) << 6) |
+      sextet(body[i + 3]);
     if (p < len) out[p++] = (n >> 16) & 0xff;
     if (p < len) out[p++] = (n >> 8) & 0xff;
     if (p < len) out[p++] = n & 0xff;
