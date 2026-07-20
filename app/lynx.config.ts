@@ -55,6 +55,12 @@ export default defineConfig({
       // resolve on Lynx native, not just web preview.
       enableCSSInheritance: true,
       enableCSSInlineVariables: true,
+      // Route @vyui packages' worklets through the main-thread loader. vue-lynx
+      // otherwise excludes all of node_modules, so vyui's MT worklet components
+      // (SwipeAction, ScrollView, Slider, gestures) never reach the MT graph.
+      // Replaces the old patches/vue-lynx@0.4.0.patch, which hard-coded this
+      // before vue-lynx exposed the allowlist option.
+      includeWorkletPackages: [/@vyui\//],
     }),
     pluginTailwindCSS({
       config: 'tailwind.config.ts',
