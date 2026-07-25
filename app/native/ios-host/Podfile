@@ -2,9 +2,9 @@
 # (see README.md step 2) and run `pod install`; open the .xcworkspace after.
 source 'https://cdn.cocoapods.org/'
 
-platform :ios, '13.0'
+platform :ios, '15.0'
 
-# LynxCameraModule.swift does `import Lynx`, so the pods must build as
+# ChimeraCameraModule.swift does `import Lynx`, so the pods must build as
 # Swift-importable modules. If pod install/build fails on "non-modular
 # header" errors, see README.md "If modular headers fail".
 use_modular_headers!
@@ -32,7 +32,7 @@ post_install do |installer|
       # Lynx pods trip warnings on recent Xcode; don't let them fail the build.
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
       config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
     # The Lynx podspec sets -Werror as per-file compiler flags, which fails on
     # Xcode 26 over iOS-13-era deprecations inside Lynx itself. Neutralize it.

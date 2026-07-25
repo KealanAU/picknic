@@ -4,7 +4,7 @@ name: PicknicHost
 options:
   bundleIdPrefix: app.picknic
   deploymentTarget:
-    iOS: '13.0'
+    iOS: '15.0'
   createIntermediateGroups: true
 schemes:
   PicknicHost:
@@ -19,16 +19,17 @@ targets:
     platform: iOS
     sources:
       - path: HostSources
-      # The lynx-camera package's native sources, referenced straight from the
-      # package repo (sibling checkout of picknic in ~/Documents/Code) so
-      # compile fixes land at the source of truth. Swap to
-      # ../../node_modules/@kealanau/lynx-camera/ios once the package is
-      # consumed from npm instead of a local tarball.
-      - path: ../../../../lynx-camera/ios
-        name: LynxCamera
+      # @vyui/camera's native sources, compiled from the installed
+      # package (what the pod would add anyway — see its INSTALLATION.md).
+      - path: ../../node_modules/@vyui/camera/ios
+        name: ChimeraCamera
         excludes:
           - 'README.md'
+      # group: pinned — with createIntermediateGroups XcodeGen otherwise nests
+      # this under the ../.. tree it builds for node_modules and doubles the
+      # path (app/native/app/native/ios/...), so the build can't find the file.
       - path: ../ios/Resources/Fonts/Comico-Regular.ttf
+        group: Fonts
         buildPhase: resources
       - path: Assets.xcassets
     info:
@@ -133,7 +134,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: '5.9'
-        IPHONEOS_DEPLOYMENT_TARGET: '13.0'
+        IPHONEOS_DEPLOYMENT_TARGET: '15.0'
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # The Embed Lynx bundle phase runs pnpm build in the repo tree.
         ENABLE_USER_SCRIPT_SANDBOXING: 'NO'

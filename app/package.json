@@ -8,7 +8,7 @@
     "build": "rspeedy build"
   },
   "dependencies": {
-    "@kealanau/lynx-camera": "file:vendor/kealanau-lynx-camera-0.1.0-alpha.0.tgz",
+    "@vyui/camera": "^0.0.2",
     "@vyui/core": "^0.2.4",
     "@vyui/kit": "^0.3.4",
     "vue": "^3.5.40",

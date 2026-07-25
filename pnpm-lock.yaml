@@ -10,9 +10,9 @@ importers:
 
   app:
     dependencies:
-      '@kealanau/lynx-camera':
-        specifier: file:vendor/kealanau-lynx-camera-0.1.0-alpha.0.tgz
-        version: file:app/vendor/kealanau-lynx-camera-0.1.0-alpha.0.tgz
+      '@vyui/camera':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@vyui/core':
         specifier: ^0.2.4
         version: 0.2.4(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.5.1(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.40(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.40(typescript@5.9.3))
@@ -128,10 +128,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@kealanau/lynx-camera@file:app/vendor/kealanau-lynx-camera-0.1.0-alpha.0.tgz':
-    resolution: {integrity: sha512-+EPtlnQGkMjSqkpd+aZM0BwjlgUeNj/L9IcmquCYh1jGBMI3vCB81KuvlhGZD8RLhjpSVQb4/Kr/Pie41RbU4w==, tarball: file:app/vendor/kealanau-lynx-camera-0.1.0-alpha.0.tgz}
-    version: 0.1.0-alpha.0
 
   '@lynx-js/cache-events-webpack-plugin@0.0.3':
     resolution: {integrity: sha512-ijKI7zlBgZYo4Hbai3BpsNkKmetNrV8VqbVbFCwlX70+DET2jvxm5Lngzqo4yteHNAFOA58XoMa81bQKFTX7WQ==}
@@ -560,6 +556,9 @@ packages:
     resolution: {integrity: sha512-bZpge9eSXwa4ToSiqJ7j6KRwhAsneMFoSz3LMWKQDkqimm3D/tbFlrklrs/IOqC8tEcYmXQZJ6N0UrjhBirVCg==}
     peerDependencies:
       vue: ^3.5.0
+
+  '@vyui/camera@0.0.2':
+    resolution: {integrity: sha512-Etyl4PQtc+g5kprFqGpbdBzEMXtLUUJhohhh7a/EPxJnJuIjXN7pcNMpW7rVMhmE0Qi2ivsACcO5zdrtWeilLQ==}
 
   '@vyui/core@0.2.4':
     resolution: {integrity: sha512-yF95WldpeKEUEIYhdD1GauGvGaJNEk60Kd180fF//0LOvpa1V8gZHYshvRytV5qTyl1VBzhz5pMwAOZ325Qf0w==}
@@ -2204,8 +2203,6 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@kealanau/lynx-camera@file:app/vendor/kealanau-lynx-camera-0.1.0-alpha.0.tgz': {}
-
   '@lynx-js/cache-events-webpack-plugin@0.0.3':
     dependencies:
       '@lynx-js/webpack-runtime-globals': 0.0.6
@@ -2750,6 +2747,8 @@ snapshots:
   '@vueuse/shared@14.3.0(vue@3.5.40(typescript@5.9.3))':
     dependencies:
       vue: 3.5.40(typescript@5.9.3)
+
+  '@vyui/camera@0.0.2': {}
 
   '@vyui/core@0.2.4(@lynx-js/react@0.116.5(@types/react@18.3.31))(vue-lynx@0.5.1(@rsbuild/core@1.7.6)(@rsbuild/plugin-vue@1.2.9(@rsbuild/core@1.7.6)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(vue@3.5.40(typescript@5.9.3)))(@types/react@18.3.31)(tslib@2.8.1)(webpack@5.108.3(postcss@8.5.16)))(vue@3.5.40(typescript@5.9.3))':
     dependencies:
