@@ -2,20 +2,17 @@
 
 Lynx ships no camera element or module. Capture is a **custom native module**
 the host app registers. The boundary is defined in `src/native/camera.ts`,
-which delegates to the `@kealanau/lynx-camera` package (developed at
-`~/Documents/Code/lynx-camera`).
+which delegates to the `@vyui/camera` package (developed at
+`~/Documents/Code/chimera-camera`).
 
 ## The JS ⇄ native contract
 
-The host compiles the package's own module —
-`node_modules/@kealanau/lynx-camera/ios/LynxCameraModule.swift` — which
-provides system-camera capture plus permissions, device enumeration, and the
-version-checked install status (`getCameraInstallStatus()`), shown in the
-camera screen when capture is unavailable. See
-`node_modules/@kealanau/lynx-camera/docs/ios-install.md`. (The package also
-accepts a legacy `CameraModule.capture()` shape, deprecated and slated for
-removal before its `0.2.0`; the legacy host files that implemented it were
-deleted from this repo.)
+The host compiles the package's own natives —
+`node_modules/@vyui/camera/ios/` — which provide system-camera capture,
+the `<camera-view>` live preview element, plus permissions, device enumeration,
+and the version-checked install status (`getCameraInstallStatus()`), shown in
+the camera screen when capture is unavailable. See
+`node_modules/@vyui/camera/INSTALLATION.md`.
 
 `src/native/camera.ts` decodes `base64` to an `ArrayBuffer` and hands the rest of
 the app a plain `CapturedPhoto`. Nothing above the boundary sees `NativeModules`.
@@ -25,8 +22,10 @@ the app a plain `CapturedPhoto`. Nothing above the boundary sees `NativeModules`
 **iOS** — at LynxView bootstrap (see `ios-host/HostSources/ViewController.swift`):
 ```swift
 let config = LynxConfig(provider: templateProvider)
-config.register(LynxCameraModule.self)
+config.register(ChimeraCameraModule.self)
 ```
+(Hosts that use Lynx's global config can call `ChimeraCamera.register()`
+instead; this one builds its own per-view config, which that helper misses.)
 
 **Android** — no host exists yet; when one does, compile the package's Android
 module and register it at startup, and add `<uses-feature camera>` + runtime
@@ -52,15 +51,15 @@ The font's family/full/postscript names are `Comico`, `Comico Regular`, and
 
 ## Two levels of camera
 
-1. **Capture a photo (implemented here).** System camera → JPEG → the app uploads
-   it via `usePhotoUpload`. This is all Picknic needs: the film look is applied
-   server-side at reveal (`api/FilmProcessing`), so no on-device filtering.
+1. **Live in-app preview + shutter (the default).** `<camera-view>` — the
+   package's LynxUI element wrapping `AVCaptureVideoPreviewLayer` (iOS) /
+   CameraX `PreviewView` (Android). It self-registers when the natives are
+   compiled in; `captureFromView()` fires its shutter.
 
-2. **Live in-app preview + shutter (not here).** The preview is a native surface,
-   so it can't be a `<view>`. Register a **custom LynxUI element** wrapping
-   `AVCaptureVideoPreviewLayer` (iOS) / CameraX `PreviewView` (Android) to get a
-   `<camera-preview>` element in the layout tree. Only needed if you want the
-   shutter inside the app rather than the system camera UI.
+2. **System camera sheet (fallback).** `capturePhoto()` → JPEG → the app uploads
+   it via `usePhotoUpload`. Kept for the Live toggle and hosts without the
+   element. Either way the film look is applied server-side at reveal
+   (`api/FilmProcessing`), so no on-device filtering.
 
 ## Why filters aren't here
 

@@ -35,9 +35,11 @@ class ViewController: UIViewController {
 
         let lynxView = LynxView { builder in
             let config = LynxConfig(provider: PicknicTemplateProvider())
-            // Registers as "CameraModule" on the JS side; LynxCameraView.m
+            // Registers as "CameraModule" on the JS side. This host builds its
+            // own per-view config, so ChimeraCamera.register() (which targets
+            // the global one) wouldn't reach it. ChimeraCameraView.m
             // self-registers <camera-view> when compiled into the target.
-            config.register(LynxCameraModule.self)
+            config.register(ChimeraCameraModule.self)
             // Persistent KV storage (auth tokens, guest session, intro flag).
             config.register(NativeKVModule.self)
             builder.config = config

@@ -1,22 +1,20 @@
-// Native camera boundary — delegates to @kealanau/lynx-camera, the only
-// place that touches NativeModules.CameraModule. The adapter understands
-// both this app's legacy host module (`capture`, see app/native/ios &
-// app/native/android) and the package's newer module (`capturePhoto` etc.),
-// and it's absent in Explorer / Lynx Go / web preview.
-// Callers must check isCameraAvailable() and degrade.
+// Native camera boundary — delegates to @vyui/camera, the only place
+// that touches NativeModules.CameraModule. The module is absent in Explorer /
+// Lynx Go / web preview, so callers must check isCameraAvailable() and degrade.
 
 // Static import (not dynamic): lazy chunks load through Lynx's own chunk
 // loader, which is unreliable in the web preview.
 import {
-  createCameraAdapter,
+  createCameraModule,
   getCameraInstallStatus,
+  getNativeCameraModule,
   invokeCameraViewMethod,
-  type CameraAdapter,
   type CameraInstallStatus,
+  type CameraModuleClient,
   type CapturePhotoOptions,
   type PhotoFile,
-} from '@kealanau/lynx-camera';
-import { createMockCameraModule } from '@kealanau/lynx-camera/mock';
+} from '@vyui/camera';
+import { createMockCameraModule } from '@vyui/camera/mock';
 import { DEV_SAMPLE_JPEG_BASE64 } from './devSamplePhoto';
 
 export interface CaptureOptions {
@@ -31,17 +29,17 @@ export interface CapturedPhoto {
   mime: string;
 }
 
-let nativeAdapter: CameraAdapter | null = null;
-let devMockAdapter: CameraAdapter | null = null;
+let nativeAdapter: CameraModuleClient | null = null;
+let devMockAdapter: CameraModuleClient | null = null;
 
 // Resolved lazily and re-probed until found: some hosts register
 // NativeModules after the JS bundle evaluates, so probing once at module
 // eval would latch "unavailable" for the whole session. Only a real native
 // adapter is cached; the DEV mock is a per-call fallback so a late-arriving
 // native module still wins.
-function getAdapter(): CameraAdapter | null {
+function getAdapter(): CameraModuleClient | null {
   if (!nativeAdapter) {
-    nativeAdapter = createCameraAdapter({ optional: true });
+    nativeAdapter = createCameraModule({ optional: true });
   }
   if (nativeAdapter) return nativeAdapter;
 
@@ -85,7 +83,9 @@ export async function capturePhoto(options: CaptureOptions = {}): Promise<Captur
   const adapter = getAdapter();
   if (!adapter) throw new Error('Camera is not available in this runtime.');
 
-  const captureOptions: CapturePhotoOptions = {};
+  // includeBase64 is off by default in the package; putBlob needs the bytes
+  // in JS, and JS can't read the returned temp-file path.
+  const captureOptions: CapturePhotoOptions = { includeBase64: true };
   if (options.quality !== undefined) captureOptions.quality = options.quality;
   if (options.facing !== undefined) captureOptions.facing = options.facing;
 
@@ -93,9 +93,8 @@ export async function capturePhoto(options: CaptureOptions = {}): Promise<Captur
   try {
     photo = await adapter.capturePhoto(captureOptions);
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    if (/cancel/i.test(message)) throw new CameraCancelled();
-    throw e instanceof Error ? e : new Error(message);
+    if (isCancel(e)) throw new CameraCancelled();
+    throw e instanceof Error ? e : new Error(String(e));
   }
 
   if (!photo.base64) throw new Error('Camera returned no image data.');
@@ -126,59 +125,42 @@ export async function captureFromView(selector: string, options: CaptureOptions 
   };
 }
 
-// Library pick goes through NativeModules directly: the installed package
-// tarball predates adapter.pickPhoto.
-// ponytail: switch to adapter.pickPhoto at the next tarball repack.
-declare const NativeModules:
-  | { CameraModule?: { pickPhoto?: (opts: Record<string, unknown>, cb: (r: unknown) => void) => void } }
-  | undefined;
-
-function nativePickPhoto() {
-  try {
-    if (typeof NativeModules === 'undefined') return null;
-    const mod = NativeModules?.CameraModule;
-    return mod && typeof mod.pickPhoto === 'function' ? mod : null;
-  } catch {
-    return null;
-  }
-}
-
-// Old host builds lack pickPhoto; hide the library button when this is false.
+// pickPhoto is optional in the native contract — host builds that predate it
+// still register a valid module, so hide the library button when it's absent.
+// No native module at all means the DEV mock, which does implement it.
 export function isLibraryPickAvailable(): boolean {
-  return nativePickPhoto() !== null;
-}
-
-interface PickResult {
-  base64?: string;
-  width?: number;
-  height?: number;
-  mime?: string;
-  error?: { code?: string; message?: string } | string;
+  if (!getAdapter()) return false;
+  const native = getNativeCameraModule<{ pickPhoto?: unknown }>();
+  return !native || typeof native.pickPhoto === 'function';
 }
 
 export async function pickFromLibrary(options: CaptureOptions = {}): Promise<CapturedPhoto> {
-  const mod = nativePickPhoto();
-  if (!mod) throw new Error('The photo library is not available in this runtime.');
+  const adapter = getAdapter();
+  if (!adapter) throw new Error('The photo library is not available in this runtime.');
 
-  const result = await new Promise<PickResult>((resolve) => {
-    mod.pickPhoto!({ quality: options.quality ?? 0.9 }, (r) => resolve((r ?? {}) as PickResult));
-  });
-
-  if (result.error) {
-    const err = result.error;
-    const code = typeof err === 'string' ? '' : (err.code ?? '');
-    const message = typeof err === 'string' ? err : (err.message ?? 'Could not load that photo.');
-    if (/cancel/i.test(code + message)) throw new CameraCancelled();
-    throw new Error(message);
+  let photo;
+  try {
+    photo = await adapter.pickPhoto({ quality: options.quality ?? 0.9, includeBase64: true });
+  } catch (e) {
+    if (isCancel(e)) throw new CameraCancelled();
+    throw e instanceof Error ? e : new Error(String(e));
   }
-  if (!result.base64) throw new Error('Camera returned no image data.');
+  if (!photo.base64) throw new Error('Camera returned no image data.');
 
   return {
-    bytes: base64ToArrayBuffer(result.base64),
-    width: result.width ?? 0,
-    height: result.height ?? 0,
-    mime: result.mime ?? 'image/jpeg',
+    bytes: base64ToArrayBuffer(photo.base64),
+    width: photo.width ?? 0,
+    height: photo.height ?? 0,
+    mime: photo.mime ?? 'image/jpeg',
   };
+}
+
+// Native rejects carry a ChimeraCameraError `code` (capture/cancelled,
+// library/cancelled); older hosts only say it in the message.
+function isCancel(e: unknown): boolean {
+  const code = (e as { code?: unknown })?.code;
+  const message = e instanceof Error ? e.message : String(e);
+  return /cancel/i.test(`${typeof code === 'string' ? code : ''} ${message}`);
 }
 
 export function toDataUri(photo: CapturedPhoto): string {
